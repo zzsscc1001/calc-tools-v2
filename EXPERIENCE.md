@@ -18,6 +18,7 @@ npx shadcn@latest add @magicui/number-ticker
 npx shadcn@latest add @magicui/animated-list
 npx shadcn@latest add @magicui/shimmer-button
 npx shadcn@latest add @magicui/magic-card
+npx shadcn@latest add @magicui/text-reveal
 ```
 
 ### shadcn 基础组件
