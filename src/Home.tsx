@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react"
 import { Link } from "react-router-dom"
 import {
   Zap,
@@ -77,6 +78,20 @@ const features = [
 ]
 
 export default function Home() {
+  // 主题切换时重播 DiaTextReveal 动画
+  const [revealKey, setRevealKey] = useState(0)
+  useEffect(() => {
+    const observer = new MutationObserver((mutations) => {
+      for (const m of mutations) {
+        if (m.attributeName === "class") {
+          setRevealKey((k) => k + 1)
+        }
+      }
+    })
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] })
+    return () => observer.disconnect()
+  }, [])
+
   return (
     <div className="relative min-h-screen bg-background">
       {/* 背景动画网格 */}
@@ -102,8 +117,8 @@ export default function Home() {
           </AnimatedShinyText>
           <h1 className="mt-1 text-4xl font-bold text-foreground">
             <DiaTextReveal
+              key={revealKey}
               text="Calc Tools"
-              startOnView={false}
               colors={["#c679c4", "#fa3d1d", "#ffb005", "#e1e1fe", "#0358f7"]}
             />
           </h1>
