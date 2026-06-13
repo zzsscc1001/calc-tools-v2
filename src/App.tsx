@@ -1,14 +1,14 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom"
+import { HashRouter, Routes, Route } from "react-router-dom"
 import Home from "./Home"
 import BoostCalculator from "./BoostCalculator"
 
 export default function App() {
   return (
-    <BrowserRouter>
+    <HashRouter>
       <Routes>
-        <Route path="/calc-tools-v2/" element={<Home />} />
-        <Route path="/calc-tools-v2/boost" element={<BoostCalculator />} />
+        <Route path="/" element={<Home />} />
+        <Route path="/boost" element={<BoostCalculator />} />
       </Routes>
-    </BrowserRouter>
+    </HashRouter>
   )
 }

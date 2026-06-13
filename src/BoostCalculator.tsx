@@ -58,14 +58,16 @@ export default function BoostCalculator() {
       </div>
 
       <div className="relative z-10 mx-auto max-w-5xl px-6 py-16">
+        {/* 返回链接 */}
+        <div className="mb-6">
+          <Link to="/" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors">
+            <ArrowLeft className="size-4" />
+            Back
+          </Link>
+        </div>
+
         {/* 头部 */}
         <div className="relative mb-12 text-center">
-          <div className="absolute top-0 left-0">
-            <Link to="/calc-tools-v2/" className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors">
-              <ArrowLeft className="size-4" />
-              Back
-            </Link>
-          </div>
           <div className="absolute top-0 right-0">
             <AnimatedThemeToggler />
           </div>

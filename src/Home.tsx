@@ -21,7 +21,7 @@ const features = [
     cta: "Open tool",
     className: "col-span-3 lg:col-span-2",
     background: <div className="absolute -top-20 -right-20 opacity-60" />,
-    to: "/calc-tools-v2/boost",
+    to: "/boost",
   },
   {
     Icon: Activity,
