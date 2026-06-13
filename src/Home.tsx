@@ -108,9 +108,9 @@ export default function Home() {
         </div>
 
         {/* Bento Grid 目录 */}
-        <BentoGrid>
+        <BentoGrid className="auto-rows-[12rem]">
           {features.map((feature, idx) => (
-            <Link key={idx} to={feature.to} className="col-span-3 lg:col-span-1">
+            <Link key={idx} to={feature.to} className="contents">
               <BentoCard {...feature} />
             </Link>
           ))}
