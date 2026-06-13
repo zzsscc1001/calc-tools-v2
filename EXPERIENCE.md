@@ -125,6 +125,19 @@ git remote add origin https://zzsscc1001:${TOKEN}@github.com/zzsscc1001/calc-too
 git push -f origin master:gh-pages
 ```
 
+## 标准组件修改记录
+
+以下组件在 CLI 安装后进行了自定义修改：
+
+### Magic UI NumberTicker (`components/ui/number-ticker.tsx`)
+- **安装命令**：`npx shadcn@latest add @magicui/number-ticker`
+- **修改内容**：添加了可选的 `springConfig` prop（类型 `SpringOptions`），允许覆盖默认弹簧动画参数
+- **修改原因**：默认动画速度太慢（stiffness: 100, damping: 60），需要更快的数字滚动效果
+- **当前使用配置**：`{ stiffness: 600, damping: 40 }`
+- **修改时间**：2026-06-11
+
+---
+
 ## 工作规则
 1. 大操作、大改先口头确认
 2. 部署后让用户亲自去 Pages 查看效果

@@ -12,7 +12,7 @@ import { Slider } from "@/components/ui/slider"
 import { Separator } from "@/components/ui/separator"
 
 // 更快的弹簧配置
-const fastSpring = { stiffness: 300, damping: 50 }
+const fastSpring = { stiffness: 600, damping: 40 }
 
 export default function BoostCalculator() {
   // 输入参数
