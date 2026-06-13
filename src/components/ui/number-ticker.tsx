@@ -1,5 +1,5 @@
 import { useEffect, useRef, type ComponentPropsWithoutRef } from "react"
-import { useInView, useMotionValue, useSpring } from "motion/react"
+import { useInView, useMotionValue, useSpring, type SpringOptions } from "motion/react"
 
 import { cn } from "@/lib/utils"
 
@@ -9,6 +9,7 @@ interface NumberTickerProps extends ComponentPropsWithoutRef<"span"> {
   direction?: "up" | "down"
   delay?: number
   decimalPlaces?: number
+  springConfig?: SpringOptions
 }
 
 export function NumberTicker({
@@ -18,6 +19,7 @@ export function NumberTicker({
   delay = 0,
   className,
   decimalPlaces = 0,
+  springConfig,
   ...props
 }: NumberTickerProps) {
   const ref = useRef<HTMLSpanElement>(null)
@@ -25,6 +27,7 @@ export function NumberTicker({
   const springValue = useSpring(motionValue, {
     damping: 60,
     stiffness: 100,
+    ...springConfig,
   })
   const isInView = useInView(ref, { once: true, margin: "0px" })
 

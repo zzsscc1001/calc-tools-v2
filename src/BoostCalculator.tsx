@@ -11,6 +11,9 @@ import { Label } from "@/components/ui/label"
 import { Slider } from "@/components/ui/slider"
 import { Separator } from "@/components/ui/separator"
 
+// 更快的弹簧配置
+const fastSpring = { stiffness: 300, damping: 50 }
+
 export default function BoostCalculator() {
   // 输入参数
   const [vin, setVin] = useState(12)
@@ -28,20 +31,17 @@ export default function BoostCalculator() {
   } | null>(null)
 
   const calculate = () => {
-    console.log("Calculate clicked!")
     const D = 1 - vin / vout
     const deltaIL = (vin * D) / (f * 1000 * l * 1e-6)
     const ilAvg = iout / (1 - D)
     const ilPeak = ilAvg + deltaIL / 2
 
-    const newResults = {
+    setResults({
       duty: D * 100,
-      deltaIL: deltaIL * 1000, // 转为 mA
-      ilAvg: ilAvg * 1000, // 转为 mA
-      ilPeak: ilPeak * 1000, // 转为 mA
-    }
-    console.log("Results:", newResults)
-    setResults(newResults)
+      deltaIL: deltaIL * 1000,
+      ilAvg: ilAvg * 1000,
+      ilPeak: ilPeak * 1000,
+    })
   }
 
   return (
@@ -193,6 +193,7 @@ export default function BoostCalculator() {
                         value={results.duty}
                         decimalPlaces={1}
                         className="text-4xl font-bold tracking-tight"
+                        springConfig={fastSpring}
                       />
                       <span className="text-xl text-muted-foreground">%</span>
                     </div>
@@ -210,6 +211,7 @@ export default function BoostCalculator() {
                         value={results.deltaIL}
                         decimalPlaces={1}
                         className="text-4xl font-bold tracking-tight"
+                        springConfig={fastSpring}
                       />
                       <span className="text-xl text-muted-foreground">mA</span>
                     </div>
@@ -227,6 +229,7 @@ export default function BoostCalculator() {
                         value={results.ilAvg}
                         decimalPlaces={1}
                         className="text-4xl font-bold tracking-tight"
+                        springConfig={fastSpring}
                       />
                       <span className="text-xl text-muted-foreground">mA</span>
                     </div>
@@ -244,6 +247,7 @@ export default function BoostCalculator() {
                         value={results.ilPeak}
                         decimalPlaces={1}
                         className="text-4xl font-bold tracking-tight"
+                        springConfig={fastSpring}
                       />
                       <span className="text-xl text-muted-foreground">mA</span>
                     </div>
