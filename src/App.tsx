@@ -1,74 +1,46 @@
-import {
-  Zap,
-  Activity,
-  Thermometer,
-  Cpu,
-  Waves,
-  Calculator,
-} from "lucide-react"
+import { useState } from "react"
+import { Zap, Activity, Calculator } from "lucide-react"
 import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler"
 import { FlickeringGrid } from "@/components/ui/flickering-grid"
 import { AnimatedShinyText } from "@/components/ui/animated-shiny-text"
-import { BentoCard, BentoGrid } from "@/components/ui/bento-grid"
-
-const features = [
-  {
-    Icon: Zap,
-    name: "Boost Converter",
-    description: "Calculate duty cycle, inductor ripple, and efficiency.",
-    href: "#",
-    cta: "Open tool",
-    className: "col-span-3 lg:col-span-2",
-    background: <div className="absolute -top-20 -right-20 opacity-60" />,
-  },
-  {
-    Icon: Activity,
-    name: "Loop Compensation",
-    description: "Bode plot analysis and compensation network design.",
-    href: "#",
-    cta: "Open tool",
-    className: "col-span-3 lg:col-span-1",
-    background: <div className="absolute -top-20 -right-20 opacity-60" />,
-  },
-  {
-    Icon: Thermometer,
-    name: "Thermal Analysis",
-    description: "Junction temperature and derating calculations.",
-    href: "#",
-    cta: "Open tool",
-    className: "col-span-3 lg:col-span-1",
-    background: <div className="absolute -top-20 -right-20 opacity-60" />,
-  },
-  {
-    Icon: Cpu,
-    name: "MOSFET Losses",
-    description: "Switching and conduction loss estimation.",
-    href: "#",
-    cta: "Open tool",
-    className: "col-span-3 lg:col-span-2",
-    background: <div className="absolute -top-20 -right-20 opacity-60" />,
-  },
-  {
-    Icon: Waves,
-    name: "LC Filter Design",
-    description: "Inductor and capacitor sizing for output filtering.",
-    href: "#",
-    cta: "Open tool",
-    className: "col-span-3 lg:col-span-2",
-    background: <div className="absolute -top-20 -right-20 opacity-60" />,
-  },
-  {
-    Icon: Calculator,
-    name: "Voltage Divider",
-    description: "Resistor ratio and loading effect calculator.",
-    href: "#",
-    cta: "Open tool",
-    className: "col-span-3 lg:col-span-1",
-    background: <div className="absolute -top-20 -right-20 opacity-60" />,
-  },
-]
+import { NumberTicker } from "@/components/ui/number-ticker"
+import { ShimmerButton } from "@/components/ui/shimmer-button"
+import { MagicCard } from "@/components/ui/magic-card"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Slider } from "@/components/ui/slider"
+import { Separator } from "@/components/ui/separator"
 
 export default function App() {
+  // 输入参数
+  const [vin, setVin] = useState(12)
+  const [vout, setVout] = useState(24)
+  const [l, setL] = useState(10) // µH
+  const [f, setF] = useState(400) // kHz
+  const [iout, setIout] = useState(0.5) // A
+
+  // 计算结果
+  const [results, setResults] = useState<{
+    duty: number
+    deltaIL: number
+    ilAvg: number
+    ilPeak: number
+  } | null>(null)
+
+  const calculate = () => {
+    const D = 1 - vin / vout
+    const deltaIL = (vin * D) / (f * 1000 * l * 1e-6)
+    const ilAvg = iout / (1 - D)
+    const ilPeak = ilAvg + deltaIL / 2
+
+    setResults({
+      duty: D * 100,
+      deltaIL: deltaIL * 1000, // 转为 mA
+      ilAvg: ilAvg * 1000, // 转为 mA
+      ilPeak: ilPeak * 1000, // 转为 mA
+    })
+  }
+
   return (
     <div className="relative min-h-screen bg-background">
       {/* 背景动画网格 */}
@@ -90,22 +62,194 @@ export default function App() {
           </div>
 
           <AnimatedShinyText className="mb-3 text-xs tracking-widest uppercase">
-            Engineer's Toolkit
+            Power Electronics Calculator
           </AnimatedShinyText>
           <h1 className="mt-1 text-3xl font-semibold text-foreground">
-            Calc Tools
+            Boost Converter
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            Power electronics calculation utilities
+            Calculate duty cycle, inductor ripple, and average current
           </p>
         </div>
 
-        {/* Bento Grid 目录 */}
-        <BentoGrid>
-          {features.map((feature, idx) => (
-            <BentoCard key={idx} {...feature} />
-          ))}
-        </BentoGrid>
+        {/* 主内容区 - 两栏布局 */}
+        <div className="grid gap-6 md:grid-cols-2">
+          {/* 左侧：输入区域 */}
+          <MagicCard className="p-6" gradientColor="var(--color-muted)">
+            <div className="space-y-6">
+              <div className="flex items-center gap-2">
+                <Calculator className="size-5" />
+                <h2 className="text-lg font-semibold">Input Parameters</h2>
+              </div>
+
+              {/* Vin */}
+              <div className="space-y-2">
+                <Label htmlFor="vin">Input Voltage (V)</Label>
+                <Input
+                  id="vin"
+                  type="number"
+                  value={vin}
+                  onChange={(e) => setVin(Number(e.target.value))}
+                  placeholder="12"
+                />
+              </div>
+
+              {/* Vout */}
+              <div className="space-y-2">
+                <Label htmlFor="vout">Output Voltage (V)</Label>
+                <Input
+                  id="vout"
+                  type="number"
+                  value={vout}
+                  onChange={(e) => setVout(Number(e.target.value))}
+                  placeholder="24"
+                />
+              </div>
+
+              {/* Inductance */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="l">Inductance (µH)</Label>
+                  <span className="text-sm text-muted-foreground">{l} µH</span>
+                </div>
+                <Slider
+                  id="l"
+                  min={1}
+                  max={100}
+                  step={1}
+                  value={[l]}
+                  onValueChange={(val) => setL(Array.isArray(val) ? val[0] : val)}
+                />
+              </div>
+
+              {/* Frequency */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="f">Switching Frequency (kHz)</Label>
+                  <span className="text-sm text-muted-foreground">{f} kHz</span>
+                </div>
+                <Slider
+                  id="f"
+                  min={100}
+                  max={1000}
+                  step={50}
+                  value={[f]}
+                  onValueChange={(val) => setF(Array.isArray(val) ? val[0] : val)}
+                />
+              </div>
+
+              {/* Output Current */}
+              <div className="space-y-2">
+                <Label htmlFor="iout">Output Current (A)</Label>
+                <Input
+                  id="iout"
+                  type="number"
+                  value={iout}
+                  onChange={(e) => setIout(Number(e.target.value))}
+                  placeholder="0.5"
+                  step={0.1}
+                />
+              </div>
+
+              <Separator />
+
+              {/* 计算按钮 */}
+              <ShimmerButton
+                className="w-full"
+                onClick={calculate}
+                shimmerColor="var(--background)"
+                background="var(--foreground)"
+              >
+                <span className="text-background flex items-center gap-2">
+                  <Zap className="size-4" />
+                  Calculate
+                </span>
+              </ShimmerButton>
+            </div>
+          </MagicCard>
+
+          {/* 右侧：输出区域 */}
+          <MagicCard className="p-6" gradientColor="var(--color-muted)">
+            <div className="space-y-6">
+              <div className="flex items-center gap-2">
+                <Activity className="size-5" />
+                <h2 className="text-lg font-semibold">Results</h2>
+              </div>
+
+              {results ? (
+                <div className="space-y-6">
+                  {/* Duty Cycle */}
+                  <div className="space-y-2">
+                    <Label className="text-muted-foreground">Duty Cycle</Label>
+                    <div className="flex items-baseline gap-1">
+                      <NumberTicker
+                        value={results.duty}
+                        decimalPlaces={1}
+                        className="text-4xl font-bold tracking-tight"
+                      />
+                      <span className="text-xl text-muted-foreground">%</span>
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  {/* Inductor Ripple */}
+                  <div className="space-y-2">
+                    <Label className="text-muted-foreground">
+                      Inductor Ripple (ΔI_L)
+                    </Label>
+                    <div className="flex items-baseline gap-1">
+                      <NumberTicker
+                        value={results.deltaIL}
+                        decimalPlaces={1}
+                        className="text-4xl font-bold tracking-tight"
+                      />
+                      <span className="text-xl text-muted-foreground">mA</span>
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  {/* Average Inductor Current */}
+                  <div className="space-y-2">
+                    <Label className="text-muted-foreground">
+                      Avg Inductor Current
+                    </Label>
+                    <div className="flex items-baseline gap-1">
+                      <NumberTicker
+                        value={results.ilAvg}
+                        decimalPlaces={1}
+                        className="text-4xl font-bold tracking-tight"
+                      />
+                      <span className="text-xl text-muted-foreground">mA</span>
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  {/* Peak Inductor Current */}
+                  <div className="space-y-2">
+                    <Label className="text-muted-foreground">
+                      Peak Inductor Current
+                    </Label>
+                    <div className="flex items-baseline gap-1">
+                      <NumberTicker
+                        value={results.ilPeak}
+                        decimalPlaces={1}
+                        className="text-4xl font-bold tracking-tight"
+                      />
+                      <span className="text-xl text-muted-foreground">mA</span>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex h-[400px] items-center justify-center text-muted-foreground">
+                  <p>Click "Calculate" to see results</p>
+                </div>
+              )}
+            </div>
+          </MagicCard>
+        </div>
 
         {/* 页脚 */}
         <div className="mt-16 text-center text-xs text-muted-foreground">
