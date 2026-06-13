@@ -22,7 +22,7 @@ npx shadcn@latest add @magicui/magic-card
 
 ### shadcn 基础组件
 ```bash
-npx shadcn@latest add input slider select switch label card tabs separator button
+npx shadcn@latest add input slider select switch label card tabs separator button checkbox chart
 ```
 
 ## 项目结构

@@ -11,6 +11,7 @@ import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler"
 import { FlickeringGrid } from "@/components/ui/flickering-grid"
 import { AnimatedShinyText } from "@/components/ui/animated-shiny-text"
 import { BentoCard, BentoGrid } from "@/components/ui/bento-grid"
+import { TextReveal } from "@/components/ui/text-reveal"
 
 const features = [
   {
@@ -91,7 +92,7 @@ export default function Home() {
 
       <div className="relative z-10 mx-auto max-w-5xl px-6 py-16">
         {/* 头部 */}
-        <div className="relative mb-12 text-center">
+        <div className="relative mb-4 text-center">
           <div className="absolute top-0 right-0">
             <AnimatedThemeToggler />
           </div>
@@ -99,32 +100,33 @@ export default function Home() {
           <AnimatedShinyText className="mb-3 text-xs tracking-widest uppercase">
             Engineer's Toolkit
           </AnimatedShinyText>
-          <h1 className="mt-1 text-3xl font-semibold text-foreground">
-            Calc Tools
-          </h1>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Power electronics calculation utilities
-          </p>
         </div>
 
-        {/* Bento Grid 目录 */}
-        <BentoGrid className="auto-rows-[12rem]">
-          {features.map((feature, idx) => (
-            <Link key={idx} to={feature.to} className="contents">
-              <BentoCard {...feature} />
-            </Link>
-          ))}
-        </BentoGrid>
+        {/* TextReveal 标题 */}
+        <TextReveal>
+          Power Electronics Calculation Utilities for Engineers
+        </TextReveal>
 
-        {/* 页脚 */}
-        <div className="mt-16 text-center text-xs text-muted-foreground">
-          Built with{" "}
-          <a
-            href="https://magicui.design"
-            className="underline underline-offset-4 hover:text-foreground transition-colors"
-          >
-            Magic UI
-          </a>
+        <div className="relative z-10">
+          {/* Bento Grid 目录 */}
+          <BentoGrid className="auto-rows-[12rem]">
+            {features.map((feature, idx) => (
+              <Link key={idx} to={feature.to} className="contents">
+                <BentoCard {...feature} />
+              </Link>
+            ))}
+          </BentoGrid>
+
+          {/* 页脚 */}
+          <div className="mt-16 text-center text-xs text-muted-foreground">
+            Built with{" "}
+            <a
+              href="https://magicui.design"
+              className="underline underline-offset-4 hover:text-foreground transition-colors"
+            >
+              Magic UI
+            </a>
+          </div>
         </div>
       </div>
     </div>
