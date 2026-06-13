@@ -17,10 +17,11 @@ const features = [
     Icon: Zap,
     name: "Boost Converter",
     description: "Calculate duty cycle, inductor ripple, and efficiency.",
-    href: "/calc-tools-v2/boost",
+    href: "#",
     cta: "Open tool",
     className: "col-span-3 lg:col-span-2",
     background: <div className="absolute -top-20 -right-20 opacity-60" />,
+    to: "/calc-tools-v2/boost",
   },
   {
     Icon: Activity,
@@ -30,6 +31,7 @@ const features = [
     cta: "Coming soon",
     className: "col-span-3 lg:col-span-1",
     background: <div className="absolute -top-20 -right-20 opacity-60" />,
+    to: "#",
   },
   {
     Icon: Thermometer,
@@ -39,6 +41,7 @@ const features = [
     cta: "Coming soon",
     className: "col-span-3 lg:col-span-1",
     background: <div className="absolute -top-20 -right-20 opacity-60" />,
+    to: "#",
   },
   {
     Icon: Cpu,
@@ -48,6 +51,7 @@ const features = [
     cta: "Coming soon",
     className: "col-span-3 lg:col-span-2",
     background: <div className="absolute -top-20 -right-20 opacity-60" />,
+    to: "#",
   },
   {
     Icon: Waves,
@@ -57,6 +61,7 @@ const features = [
     cta: "Coming soon",
     className: "col-span-3 lg:col-span-2",
     background: <div className="absolute -top-20 -right-20 opacity-60" />,
+    to: "#",
   },
   {
     Icon: Calculator,
@@ -66,6 +71,7 @@ const features = [
     cta: "Coming soon",
     className: "col-span-3 lg:col-span-1",
     background: <div className="absolute -top-20 -right-20 opacity-60" />,
+    to: "#",
   },
 ]
 
@@ -104,7 +110,7 @@ export default function Home() {
         {/* Bento Grid 目录 */}
         <BentoGrid>
           {features.map((feature, idx) => (
-            <Link key={idx} to={feature.href} className="contents">
+            <Link key={idx} to={feature.to} className="col-span-3 lg:col-span-1">
               <BentoCard {...feature} />
             </Link>
           ))}
