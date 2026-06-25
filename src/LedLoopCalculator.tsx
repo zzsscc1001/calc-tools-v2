@@ -256,8 +256,8 @@ export default function LedLoopCalculator() {
   const bodeData = useMemo(() => {
     if (!result) return []
     return result.bode.map(p => ({
+      logF: Math.log10(p.f),
       f: p.f,
-      fLabel: p.f >= 1e6 ? `${(p.f/1e6).toFixed(1)}M` : p.f >= 1e3 ? `${(p.f/1e3).toFixed(0)}k` : `${p.f.toFixed(0)}`,
       gain: parseFloat(p.gainDb.toFixed(2)),
       phase: parseFloat(p.phaseDeg.toFixed(2)),
     }))
@@ -572,17 +572,17 @@ export default function LedLoopCalculator() {
                 <LineChart data={bodeData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
                   <XAxis
-                    dataKey="f"
-                    scale="log"
-                    domain={[100, 5e6]}
+                    dataKey="logF"
+                    type="number"
+                    domain={[2, 6.7]}
                     tick={{ fontSize: 10 }}
                     tickFormatter={v => {
-                      if (v >= 1e6) return `${v/1e6}M`
-                      if (v >= 1e3) return `${v/1e3}k`
-                      return `${v}`
+                      if (v >= 6) return `${Math.pow(10, v)/1e6}M`
+                      if (v >= 3) return `${Math.pow(10, v)/1e3}k`
+                      return `${Math.pow(10, v)}`
                     }}
+                    ticks={[2, 3, 4, 5, 6]}
                     label={{ value: "Frequency (Hz)", position: "insideBottom", offset: -2, style: { fontSize: 10 } }}
-                    ticks={[100, 1000, 10000, 100000, 1000000]}
                   />
                   <YAxis
                     tick={{ fontSize: 10 }}
@@ -614,17 +614,17 @@ export default function LedLoopCalculator() {
                 <LineChart data={bodeData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
                   <XAxis
-                    dataKey="f"
-                    scale="log"
-                    domain={[100, 5e6]}
+                    dataKey="logF"
+                    type="number"
+                    domain={[2, 6.7]}
                     tick={{ fontSize: 10 }}
                     tickFormatter={v => {
-                      if (v >= 1e6) return `${v/1e6}M`
-                      if (v >= 1e3) return `${v/1e3}k`
-                      return `${v}`
+                      if (v >= 6) return `${Math.pow(10, v)/1e6}M`
+                      if (v >= 3) return `${Math.pow(10, v)/1e3}k`
+                      return `${Math.pow(10, v)}`
                     }}
+                    ticks={[2, 3, 4, 5, 6]}
                     label={{ value: "Frequency (Hz)", position: "insideBottom", offset: -2, style: { fontSize: 10 } }}
-                    ticks={[100, 1000, 10000, 100000, 1000000]}
                   />
                   <YAxis
                     tick={{ fontSize: 10 }}
