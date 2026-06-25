@@ -7,6 +7,7 @@ import {
   Cpu,
   Waves,
   Calculator,
+  BarChart3,
 } from "lucide-react"
 import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler"
 import { FlickeringGrid } from "@/components/ui/flickering-grid"
@@ -17,13 +18,23 @@ import { DiaTextReveal } from "@/components/ui/dia-text-reveal"
 const features = [
   {
     Icon: Zap,
-    name: "Boost Converter",
-    description: "Calculate duty cycle, inductor ripple, and efficiency.",
+    name: "Calculator Demo",
+    description: "Basic Boost converter duty cycle and ripple demo.",
+    href: "#",
+    cta: "Open demo",
+    className: "col-span-3 lg:col-span-1",
+    background: <div className="absolute -top-20 -right-20 opacity-60" />,
+    to: "/boost",
+  },
+  {
+    Icon: BarChart3,
+    name: "Boost Ripple",
+    description: "Two-phase interleaved async Boost output ripple simulation.",
     href: "#",
     cta: "Open tool",
     className: "col-span-3 lg:col-span-2",
     background: <div className="absolute -top-20 -right-20 opacity-60" />,
-    to: "/boost",
+    to: "/boost-ripple",
   },
   {
     Icon: Activity,
