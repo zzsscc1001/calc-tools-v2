@@ -41,10 +41,10 @@ const features = [
     name: "Loop Compensation",
     description: "Bode plot analysis and compensation network design.",
     href: "#",
-    cta: "Coming soon",
+    cta: "Open tool",
     className: "col-span-3 lg:col-span-1",
     background: <div className="absolute -top-20 -right-20 opacity-60" />,
-    to: "#",
+    to: "/led-loop",
   },
   {
     Icon: Thermometer,
