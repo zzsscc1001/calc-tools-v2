@@ -217,27 +217,60 @@ function calculateBoostRipple(inputs: RippleInputs): RippleResult {
     if (vripple[i] > vrMax) vrMax = vripple[i]
   }
 
-  // 生成波形数据 (5 个周期, 降采样步长 4)
+  // 生成波形数据 (5 个周期, 平铺+重积分, 降采样步长 4)
   const NCYCLES = 5
   const DOWNSAMPLE = 4
-  const waveforms: WaveformPoint[] = []
-  for (let cycle = 0; cycle < NCYCLES; cycle++) {
-    for (let i = 0; i < N; i += DOWNSAMPLE) {
-      const globalIdx = cycle * N + i
-      const tUs = (globalIdx / (N * NCYCLES)) * T * NCYCLES * 1e6
-      const idx1 = i
+
+  // 平铺 Id1, Id2, Id_total, Vesr 到 5 个周期
+  const Nt = NCYCLES * N
+  const id1Tiled = new Float64Array(Nt)
+  const id2Tiled = new Float64Array(Nt)
+  const idTotalTiled = new Float64Array(Nt)
+  const vesrTiled = new Float64Array(Nt)
+  for (let c = 0; c < NCYCLES; c++) {
+    for (let i = 0; i < N; i++) {
+      const idx = c * N + i
       const idx2 = (i + halfN) % N
-      waveforms.push({
-        t: parseFloat(tUs.toFixed(2)),
-        id1: parseFloat(ph1.id[idx1].toFixed(3)),
-        id2: parseFloat(ph2.id[idx2].toFixed(3)),
-        idTotal: parseFloat(idTotal[idx1].toFixed(3)),
-        ic: parseFloat(ic[idx1].toFixed(3)),
-        vc: parseFloat((vc[idx1] * 1000).toFixed(2)),
-        vesr: parseFloat((vesr[idx1] * 1000).toFixed(2)),
-        vripple: parseFloat((vripple[idx1] * 1000).toFixed(2)),
-      })
+      id1Tiled[idx] = ph1.id[i]
+      id2Tiled[idx] = ph2.id[idx2]
+      idTotalTiled[idx] = idTotal[i]
+      vesrTiled[idx] = vesr[i]
     }
+  }
+
+  // Ic 去直流后平铺，再重积分 Vc（参考代码做法）
+  let meanIc = 0
+  for (let i = 0; i < N; i++) meanIc += ic[i]
+  meanIc /= N
+
+  const vcTiled = new Float64Array(Nt)
+  let vcSumTiled = 0
+  for (let i = 0; i < Nt; i++) {
+    vcSumTiled += (ic[i % N] - meanIc) * dt
+    vcTiled[i] = vcSumTiled / Cout
+  }
+  let vcMeanTiled = 0
+  for (let i = 0; i < Nt; i++) vcMeanTiled += vcTiled[i]
+  vcMeanTiled /= Nt
+  for (let i = 0; i < Nt; i++) vcTiled[i] -= vcMeanTiled
+
+  const vrippleTiled = new Float64Array(Nt)
+  for (let i = 0; i < Nt; i++) vrippleTiled[i] = vcTiled[i] + vesrTiled[i]
+
+  // 降采样输出
+  const waveforms: WaveformPoint[] = []
+  for (let i = 0; i < Nt; i += DOWNSAMPLE) {
+    const tUs = (i / Nt) * T * NCYCLES * 1e6
+    waveforms.push({
+      t: parseFloat(tUs.toFixed(2)),
+      id1: parseFloat(id1Tiled[i].toFixed(3)),
+      id2: parseFloat(id2Tiled[i].toFixed(3)),
+      idTotal: parseFloat(idTotalTiled[i].toFixed(3)),
+      ic: parseFloat((ic[i % N] - meanIc).toFixed(3)),
+      vc: parseFloat((vcTiled[i] * 1000).toFixed(2)),
+      vesr: parseFloat((vesrTiled[i] * 1000).toFixed(2)),
+      vripple: parseFloat((vrippleTiled[i] * 1000).toFixed(2)),
+    })
   }
 
   return {
