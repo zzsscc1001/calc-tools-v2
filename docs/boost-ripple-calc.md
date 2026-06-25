@@ -127,7 +127,25 @@ Vesr_pp = max(Vesr) - min(Vesr)        // ESR 纹波峰峰值
 
 ### 波形数据（用于绘图）
 
-每个数组长度 = N (2000)，时间单位 µs：
+**多周期波形生成方式（5 个周期，NCYCLES=5，降采样步长 4）：**
+
+1. 单周期计算：Id1[], Id2[], Ic[], Vesr[]（长度 N=2000）
+2. 平铺 Id1, Id2, Id_total, Vesr 到 5 个周期（长度 Nt = 5×N）
+3. Ic 去直流（减均值 meanIc），平铺后重积分 Vc：`Vc_tiled[i] = Σ(Ic[i%N] - meanIc)·dt / Cout`，再减均值
+4. `Vripple_tiled = Vc_tiled + Vesr_tiled`
+5. 降采样（步长 4）输出
+
+> **为什么重积分？** 单周期 Vc 直接平铺会导致周期边界不连续。去直流后跨 5 周期连续积分，保证电容电压波形连续。
+
+```
+Ic_dc[] = Ic[] - mean(Ic[])           // 去直流
+for i = 0 to Nt:
+    Vc_tiled[i] = Σ(Ic_dc[i%N] · dt) / Cout   // 连续积分
+Vc_tiled[] -= mean(Vc_tiled[])        // 去直流偏移
+Vripple_tiled[] = Vc_tiled[] + Vesr_tiled[]
+```
+
+输出数组长度 = Nt / DOWNSAMPLE = 2500，时间单位 µs：
 
 | 波形 | 说明 |
 |------|------|
