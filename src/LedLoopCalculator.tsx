@@ -515,7 +515,7 @@ export default function LedLoopCalculator() {
                   {/* 零极点表 */}
                   <div className="space-y-2">
                     <Label className="text-xs font-medium">Poles & Zeros</Label>
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       {/* 零点 */}
                       <div className="space-y-1.5">
                         <Label className="text-xs text-blue-500 font-medium">Zeros</Label>
