@@ -1,6 +1,8 @@
 import { useState, useMemo } from "react"
 import { Link } from "react-router-dom"
 import { Zap, Activity, Calculator, ArrowLeft, Waves } from "lucide-react"
+import "katex/dist/katex.min.css"
+import { BlockMath } from "react-katex"
 import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler"
 import { FlickeringGrid } from "@/components/ui/flickering-grid"
 import { AnimatedShinyText } from "@/components/ui/animated-shiny-text"
@@ -646,18 +648,34 @@ export default function LedLoopCalculator() {
 
             {/* 传递函数参考 */}
             <MagicCard className="p-6" gradientColor="var(--color-muted)">
-              <div className="mb-3">
+              <div className="mb-4">
                 <Label className="text-xs font-medium">Transfer Function Reference</Label>
               </div>
-              <pre className="text-xs text-muted-foreground font-mono whitespace-pre-wrap leading-relaxed">
-{`T(s) = (K_sys / s) · [(1+s/ω_cz)(1+s/ω_bz)(1−s/ω_RHP)(1−s/ω_del)]
-       / [(1+s/ω_p1)(1+s/ω_bp)(1+s/ω_del)]
-
-K_sys = g_m · V_in · R_s / [R_i · C_c · (V_o + I_o · R_LED)]
-
-Zeros:  ω_cz = 1/(R_c·C_c),  ω_bz = 1/(R_LED·C_o),  ω_RHP = (1−D)²·V_o/(L·I_o)
-Poles:  ω_p1 = (V_o+I_o·R_LED)/[V_o·(R_LED+R_esr)·C_o],  ω_bp = 1/(R_s·C_s)`}
-              </pre>
+              <div className="space-y-4 text-sm">
+                <div>
+                  <BlockMath math="T(s) = \frac{K_{sys}}{s} \cdot \frac{\left(1+\frac{s}{\omega_{cz}}\right)\left(1+\frac{s}{\omega_{bz}}\right)\left(1-\frac{s}{\omega_{RHP}}\right)\left(1-\frac{s}{\omega_{del}}\right)}{\left(1+\frac{s}{\omega_{p1}}\right)\left(1+\frac{s}{\omega_{bp}}\right)\left(1+\frac{s}{\omega_{del}}\right)}" />
+                </div>
+                <div>
+                  <BlockMath math="K_{sys} = \frac{g_m \cdot V_{in} \cdot R_s}{R_i \cdot C_c \cdot (V_o + I_o \cdot R_{LED})}" />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-xs text-blue-500 font-medium mb-2 block">Zeros</Label>
+                    <div className="space-y-1">
+                      <BlockMath math="\omega_{cz} = \frac{1}{R_c \cdot C_c}" />
+                      <BlockMath math="\omega_{bz} = \frac{1}{R_{LED} \cdot C_o}" />
+                      <BlockMath math="\omega_{RHP} = \frac{(1-D)^2 \cdot V_o}{L \cdot I_o}" />
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="text-xs text-red-500 font-medium mb-2 block">Poles</Label>
+                    <div className="space-y-1">
+                      <BlockMath math="\omega_{p1} = \frac{V_o + I_o \cdot R_{LED}}{V_o \cdot (R_{LED}+R_{esr}) \cdot C_o}" />
+                      <BlockMath math="\omega_{bp} = \frac{1}{R_s \cdot C_s}" />
+                    </div>
+                  </div>
+                </div>
+              </div>
             </MagicCard>
           </div>
         )}
