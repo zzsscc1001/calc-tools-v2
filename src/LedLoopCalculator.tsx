@@ -1,8 +1,8 @@
 import { useState, useMemo } from "react"
 import { Link } from "react-router-dom"
 import { Zap, Activity, Calculator, ArrowLeft, Waves } from "lucide-react"
+import katex from "katex"
 import "katex/dist/katex.min.css"
-import { BlockMath } from "react-katex"
 import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler"
 import { FlickeringGrid } from "@/components/ui/flickering-grid"
 import { AnimatedShinyText } from "@/components/ui/animated-shiny-text"
@@ -222,6 +222,12 @@ function formatFreq(hz: number): string {
 // ─── 格式化角频率为 Hz ───
 function omegaToHz(rad_s: number): string {
   return formatFreq(rad_s / (2 * Math.PI))
+}
+
+// ─── KaTeX 渲染辅助 ───
+function MathBlock({ math: tex }: { math: string }) {
+  const html = katex.renderToString(tex, { displayMode: true, throwOnError: false })
+  return <div dangerouslySetInnerHTML={{ __html: html }} />
 }
 
 // ─── 主组件 ───
@@ -653,25 +659,25 @@ export default function LedLoopCalculator() {
               </div>
               <div className="space-y-4 text-sm">
                 <div>
-                  <BlockMath math="T(s) = \frac{K_{sys}}{s} \cdot \frac{\left(1+\frac{s}{\omega_{cz}}\right)\left(1+\frac{s}{\omega_{bz}}\right)\left(1-\frac{s}{\omega_{RHP}}\right)\left(1-\frac{s}{\omega_{del}}\right)}{\left(1+\frac{s}{\omega_{p1}}\right)\left(1+\frac{s}{\omega_{bp}}\right)\left(1+\frac{s}{\omega_{del}}\right)}" />
+                  <MathBlock math="T(s) = \frac{K_{sys}}{s} \cdot \frac{\left(1+\frac{s}{\omega_{cz}}\right)\left(1+\frac{s}{\omega_{bz}}\right)\left(1-\frac{s}{\omega_{RHP}}\right)\left(1-\frac{s}{\omega_{del}}\right)}{\left(1+\frac{s}{\omega_{p1}}\right)\left(1+\frac{s}{\omega_{bp}}\right)\left(1+\frac{s}{\omega_{del}}\right)}" />
                 </div>
                 <div>
-                  <BlockMath math="K_{sys} = \frac{g_m \cdot V_{in} \cdot R_s}{R_i \cdot C_c \cdot (V_o + I_o \cdot R_{LED})}" />
+                  <MathBlock math="K_{sys} = \frac{g_m \cdot V_{in} \cdot R_s}{R_i \cdot C_c \cdot (V_o + I_o \cdot R_{LED})}" />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label className="text-xs text-blue-500 font-medium mb-2 block">Zeros</Label>
                     <div className="space-y-1">
-                      <BlockMath math="\omega_{cz} = \frac{1}{R_c \cdot C_c}" />
-                      <BlockMath math="\omega_{bz} = \frac{1}{R_{LED} \cdot C_o}" />
-                      <BlockMath math="\omega_{RHP} = \frac{(1-D)^2 \cdot V_o}{L \cdot I_o}" />
+                      <MathBlock math="\omega_{cz} = \frac{1}{R_c \cdot C_c}" />
+                      <MathBlock math="\omega_{bz} = \frac{1}{R_{LED} \cdot C_o}" />
+                      <MathBlock math="\omega_{RHP} = \frac{(1-D)^2 \cdot V_o}{L \cdot I_o}" />
                     </div>
                   </div>
                   <div>
                     <Label className="text-xs text-red-500 font-medium mb-2 block">Poles</Label>
                     <div className="space-y-1">
-                      <BlockMath math="\omega_{p1} = \frac{V_o + I_o \cdot R_{LED}}{V_o \cdot (R_{LED}+R_{esr}) \cdot C_o}" />
-                      <BlockMath math="\omega_{bp} = \frac{1}{R_s \cdot C_s}" />
+                      <MathBlock math="\omega_{p1} = \frac{V_o + I_o \cdot R_{LED}}{V_o \cdot (R_{LED}+R_{esr}) \cdot C_o}" />
+                      <MathBlock math="\omega_{bp} = \frac{1}{R_s \cdot C_s}" />
                     </div>
                   </div>
                 </div>
