@@ -353,7 +353,7 @@ export default function LedLoopCalculator() {
                     <Input id="io" type="number" value={io} onChange={e => setIo(Number(e.target.value))} step={0.1} />
                   </div>
                   <div className="space-y-1">
-                    <Label htmlFor="nLed" className="text-xs">n_led (颗)</Label>
+                    <Label htmlFor="nLed" className="text-xs">n_led</Label>
                     <Input id="nLed" type="number" value={nLed} onChange={e => setNLed(Number(e.target.value))} step={1} />
                   </div>
                   <div className="space-y-1">
@@ -369,7 +369,7 @@ export default function LedLoopCalculator() {
                     <Input id="esr" type="number" value={esr} onChange={e => setEsr(Number(e.target.value))} step={1} />
                   </div>
                   <div className="space-y-1">
-                    <Label htmlFor="rPer" className="text-xs">r_per (Ω/颗)</Label>
+                    <Label htmlFor="rPer" className="text-xs">r_per (Ω)</Label>
                     <Input id="rPer" type="number" value={rPer} onChange={e => setRPer(Number(e.target.value))} step={0.01} />
                   </div>
                 </div>
@@ -468,10 +468,14 @@ export default function LedLoopCalculator() {
                   <div className="grid grid-cols-2 gap-4">
                     <div className="rounded-lg border border-border p-4 text-center">
                       <Label className="text-muted-foreground text-xs">Crossover Freq</Label>
-                      <div className="mt-2">
-                        <span className="text-2xl font-bold tracking-tight font-mono">
-                          {formatFreq(result.scalars.fc)}
-                        </span>
+                      <div className="mt-2 flex items-baseline justify-center gap-1">
+                        <NumberTicker
+                          value={result.scalars.fc / 1000}
+                          decimalPlaces={2}
+                          className="text-3xl font-bold tracking-tight"
+                          springConfig={fastSpring}
+                        />
+                        <span className="text-xl text-muted-foreground">kHz</span>
                       </div>
                     </div>
                     <div className={`rounded-lg p-4 text-center ${pmBg(result.scalars.phaseMargin)}`}>
@@ -480,10 +484,10 @@ export default function LedLoopCalculator() {
                         <NumberTicker
                           value={result.scalars.phaseMargin}
                           decimalPlaces={1}
-                          className={`text-2xl font-bold tracking-tight ${pmColor(result.scalars.phaseMargin)}`}
+                          className={`text-3xl font-bold tracking-tight ${pmColor(result.scalars.phaseMargin)}`}
                           springConfig={fastSpring}
                         />
-                        <span className="text-lg text-muted-foreground">°</span>
+                        <span className="text-xl text-muted-foreground">°</span>
                       </div>
                     </div>
                   </div>
@@ -654,8 +658,9 @@ export default function LedLoopCalculator() {
 
             {/* 传递函数参考 */}
             <MagicCard className="p-6" gradientColor="var(--color-muted)">
-              <div className="mb-4">
-                <Label className="text-xs font-medium">Transfer Function Reference</Label>
+              <div className="mb-4 flex items-center gap-2">
+                <Calculator className="size-5" />
+                <h2 className="text-lg font-semibold">Transfer Function Reference</h2>
               </div>
               <div className="space-y-4 text-sm">
                 <div>
