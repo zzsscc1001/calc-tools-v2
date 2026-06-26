@@ -227,7 +227,7 @@ function omegaToHz(rad_s: number): string {
 // ─── KaTeX 渲染辅助 ───
 function MathBlock({ math: tex }: { math: string }) {
   const html = katex.renderToString(tex, { displayMode: true, throwOnError: false })
-  return <div dangerouslySetInnerHTML={{ __html: html }} />
+  return <div className="overflow-x-auto" dangerouslySetInnerHTML={{ __html: html }} />
 }
 
 // ─── 主组件 ───
