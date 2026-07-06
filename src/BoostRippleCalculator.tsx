@@ -571,7 +571,7 @@ export default function BoostRippleCalculator() {
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
                   <XAxis dataKey="t" tick={{ fontSize: 10 }} tickFormatter={v => `${v}µs`} label={{ value: "Time (µs)", position: "insideBottom", offset: -2, style: { fontSize: 10 } }} />
                   <YAxis tick={{ fontSize: 10 }} label={{ value: "Current (A)", angle: -90, position: "insideLeft", style: { fontSize: 10 } }} />
-                  <ChartTooltip content={<ChartTooltipContent />} />
+                  <ChartTooltip content={<ChartTooltipContent labelFormatter={(_, payload) => `t = ${payload?.[0]?.payload?.t} µs`} />} />
                   <Line type="monotone" dataKey="id1" stroke="var(--color-id1)" strokeWidth={1.5} dot={false} />
                   <Line type="monotone" dataKey="id2" stroke="var(--color-id2)" strokeWidth={1.5} dot={false} />
                   <Line type="monotone" dataKey="idTotal" stroke="var(--color-idTotal)" strokeWidth={2} dot={false} />
@@ -591,7 +591,7 @@ export default function BoostRippleCalculator() {
                     <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
                     <XAxis dataKey="t" tick={{ fontSize: 10 }} tickFormatter={v => `${v}µs`} />
                     <YAxis tick={{ fontSize: 10 }} label={{ value: "mV", angle: -90, position: "insideLeft", style: { fontSize: 10 } }} />
-                    <ChartTooltip content={<ChartTooltipContent />} />
+                    <ChartTooltip content={<ChartTooltipContent labelFormatter={(_, payload) => `t = ${payload?.[0]?.payload?.t} µs`} />} />
                     <Line type="monotone" dataKey="vc" stroke="var(--color-vc)" strokeWidth={1.5} dot={false} />
                     <Line type="monotone" dataKey="vesr" stroke="var(--color-vesr)" strokeWidth={1.5} dot={false} />
                   </LineChart>
@@ -608,7 +608,7 @@ export default function BoostRippleCalculator() {
                     <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
                     <XAxis dataKey="t" tick={{ fontSize: 10 }} tickFormatter={v => `${v}µs`} />
                     <YAxis tick={{ fontSize: 10 }} label={{ value: "mV", angle: -90, position: "insideLeft", style: { fontSize: 10 } }} />
-                    <ChartTooltip content={<ChartTooltipContent />} />
+                    <ChartTooltip content={<ChartTooltipContent labelFormatter={(_, payload) => `t = ${payload?.[0]?.payload?.t} µs`} />} />
                     <Line type="monotone" dataKey="vripple" stroke="var(--color-vripple)" strokeWidth={2} dot={false} />
                   </LineChart>
                 </ChartContainer>
