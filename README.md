@@ -12,7 +12,7 @@ A collection of power electronics calculation utilities built with **Vite + Reac
 - **Rich form inputs** — Slider, Input, Select, Checkbox (all from shadcn/ui)
 - **Animated results** — NumberTicker for smooth number transitions
 - **Waveform charts** — Recharts via shadcn/ui Chart for real circuit waveforms
-- **GitHub Pages deploy** — HashRouter for SPA routing on static hosting
+- **GitHub Pages deploy** — GitHub Actions CI/CD + HashRouter for SPA routing
 
 ## Quick Start
 
@@ -32,23 +32,31 @@ npm run dev
 
 ```
 src/
-├── App.tsx                    # HashRouter 路由入口
-├── Home.tsx                   # BentoGrid 目录主页
-├── BoostCalculator.tsx        # 示例计算器页面
+├── App.tsx                          # HashRouter 路由入口
+├── Home.tsx                         # BentoGrid 目录主页
+├── BoostCalculator.tsx              # Boost 基础参数计算器
+├── BoostRippleCalculator.tsx        # Boost 两相交错纹波计算器
+├── LedLoopCalculator.tsx            # LED 驱动环路补偿计算器
 ├── main.tsx
-├── index.css                  # Tailwind CSS v4 入口 (@import "tailwindcss")
+├── index.css                        # Tailwind CSS v4 入口 (@import "tailwindcss")
 ├── lib/
-│   └── utils.ts               # cn() helper (clsx + tailwind-merge)
+│   ├── utils.ts                     # cn() helper (clsx + tailwind-merge)
+│   └── calculators/                 # 计算核心（纯函数，无 React 依赖）
+│       ├── index.ts                 # 统一导出入口
+│       ├── boost-ripple.ts          # Boost 纹波计算逻辑
+│       └── led-loop.ts              # LED 环路补偿计算逻辑
 └── components/
-    └── ui/                    # 所有 Magic UI + shadcn 组件 (CLI 安装)
-        ├── bento-grid.tsx     # Magic UI: BentoGrid + BentoCard
-        ├── dia-text-reveal.tsx# Magic UI: 渐变文字扫描动画
-        ├── flickering-grid.tsx# Magic UI: 背景闪烁网格
-        ├── number-ticker.tsx  # Magic UI: 数字滚动动画
+    ├── layout/
+    │   └── CalculatorLayout.tsx     # 通用计算器页面布局组件
+    └── ui/                          # 所有 Magic UI + shadcn 组件 (CLI 安装)
+        ├── bento-grid.tsx           # Magic UI: BentoGrid + BentoCard
+        ├── dia-text-reveal.tsx      # Magic UI: 渐变文字扫描动画
+        ├── flickering-grid.tsx      # Magic UI: 背景闪烁网格
+        ├── number-ticker.tsx        # Magic UI: 数字滚动动画
         ├── animated-shiny-text.tsx
         ├── animated-theme-toggler.tsx
         ├── magic-card.tsx
-        ├── chart.tsx          # shadcn: Recharts 封装
+        ├── chart.tsx                # shadcn: Recharts 封装
         ├── checkbox.tsx
         ├── input.tsx
         ├── label.tsx
@@ -60,116 +68,158 @@ src/
 
 ## How to Add a New Calculator Page
 
-Follow these 5 steps to add your own tool (e.g. "Buck Converter"):
+Follow these 4 steps to add your own tool (e.g. "Buck Converter"):
 
-### Step 1: Create the page file
+### Step 1: Create the calculation logic
 
-Create `src/BuckCalculator.tsx`. Use `BoostCalculator.tsx` as a template. The minimal structure:
+Create `src/lib/calculators/buck.ts`. Keep all math here as a pure function with no React dependencies — this makes it independently testable.
+
+```ts
+// src/lib/calculators/buck.ts
+
+export interface BuckInputs {
+  vin: number   // V
+  vout: number  // V
+  iout: number  // A
+  fsw: number   // kHz
+  l: number     // µH
+}
+
+export interface BuckResult {
+  duty: number      // %
+  ilRipple: number  // mA
+}
+
+export function calculateBuck(inputs: BuckInputs): BuckResult {
+  const { vin, vout, iout, fsw, l } = inputs
+
+  if (vin <= 0 || vout <= 0 || iout <= 0 || fsw <= 0 || l <= 0)
+    throw new Error("All parameters must be positive.")
+  if (vout >= vin)
+    throw new Error("Vout must be less than Vin for a Buck converter.")
+
+  const duty = (vout / vin) * 100
+  const ilRipple = ((vin - vout) * (vout / vin)) / (fsw * 1000 * l * 1e-6) * 1000
+
+  return { duty, ilRipple }
+}
+```
+
+Then re-export it from `src/lib/calculators/index.ts`:
+
+```ts
+export type { BuckInputs, BuckResult } from "./buck"
+export { calculateBuck } from "./buck"
+```
+
+### Step 2: Create the page component
+
+Create `src/BuckCalculator.tsx`. Use `CalculatorLayout` for the page shell — it handles the background, header, back button, and theme toggle automatically.
 
 ```tsx
+// src/BuckCalculator.tsx
 import { useState } from "react"
-import { Link } from "react-router-dom"
-import { ArrowLeft, Zap, Activity, Calculator } from "lucide-react"
-import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler"
-import { FlickeringGrid } from "@/components/ui/flickering-grid"
-import { AnimatedShinyText } from "@/components/ui/animated-shiny-text"
+import { Zap, Activity, Calculator } from "lucide-react"
+import { CalculatorLayout } from "@/components/layout/CalculatorLayout"
+import { calculateBuck, type BuckResult } from "@/lib/calculators"
 import { NumberTicker } from "@/components/ui/number-ticker"
 import { MagicCard } from "@/components/ui/magic-card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Slider } from "@/components/ui/slider"
-import { Separator } from "@/components/ui/separator"
 
 const fastSpring = { stiffness: 600, damping: 40 }
 
 export default function BuckCalculator() {
-  // 输入参数
   const [vin, setVin] = useState(12)
   const [vout, setVout] = useState(5)
+  const [iout, setIout] = useState(2)
+  const [fsw, setFsw] = useState(300)
+  const [l, setL] = useState(10)
 
-  // 计算结果
-  const [results, setResults] = useState<{ duty: number } | null>(null)
+  const [result, setResult] = useState<BuckResult | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
   const calculate = () => {
-    const D = vout / vin
-    setResults({ duty: D * 100 })
+    try {
+      setError(null)
+      setResult(calculateBuck({ vin, vout, iout, fsw, l }))
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Calculation error")
+    }
   }
 
   return (
-    <div className="relative min-h-screen bg-background">
-      <div className="fixed inset-0 z-0">
-        <FlickeringGrid color="var(--foreground)" maxOpacity={0.03} flickerChance={0.04} squareSize={3} gridGap={6} />
-      </div>
-
-      <div className="relative z-10 mx-auto max-w-5xl px-6 py-16">
-        {/* 返回链接 */}
-        <div className="mb-6">
-          <Link to="/" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors">
-            <ArrowLeft className="size-4" /> Back
-          </Link>
-        </div>
-
-        {/* 头部 */}
-        <div className="relative mb-12 text-center">
-          <div className="absolute top-0 right-0"><AnimatedThemeToggler /></div>
-          <AnimatedShinyText className="mb-3 text-xs tracking-widest uppercase">
-            Power Electronics Calculator
-          </AnimatedShinyText>
-          <h1 className="mt-1 text-3xl font-semibold text-foreground">Buck Converter</h1>
-        </div>
-
-        {/* 左右两栏: 输入 + 输出 */}
-        <div className="grid gap-6 md:grid-cols-2">
-          {/* 左: 输入 */}
-          <MagicCard className="p-6" gradientColor="var(--color-muted)">
-            <div className="space-y-6">
-              <div className="flex items-center gap-2">
-                <Calculator className="size-5" />
-                <h2 className="text-lg font-semibold">Input Parameters</h2>
-              </div>
-              {/* ...你的输入控件... */}
-              <button
-                className="w-full bg-foreground text-background py-3 px-6 rounded-lg font-medium hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
-                onClick={calculate}
-              >
-                <Zap className="size-4" /> Calculate
-              </button>
+    <CalculatorLayout
+      title="Buck Converter"
+      description="Step-down converter duty cycle and inductor ripple current calculation."
+    >
+      <div className="grid gap-6 md:grid-cols-2">
+        {/* 左: 输入 */}
+        <MagicCard className="p-6" gradientColor="var(--color-muted)">
+          <div className="space-y-5">
+            <div className="flex items-center gap-2">
+              <Calculator className="size-5" />
+              <h2 className="text-lg font-semibold">Input Parameters</h2>
             </div>
-          </MagicCard>
 
-          {/* 右: 输出 */}
-          <MagicCard className="p-6" gradientColor="var(--color-muted)">
-            <div className="space-y-6">
-              <div className="flex items-center gap-2">
-                <Activity className="size-5" />
-                <h2 className="text-lg font-semibold">Results</h2>
-              </div>
-              {results ? (
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label className="text-muted-foreground">Duty Cycle</Label>
-                    <div className="flex items-baseline gap-1">
-                      <NumberTicker value={results.duty} decimalPlaces={1}
-                        className="text-4xl font-bold tracking-tight" springConfig={fastSpring} />
-                      <span className="text-xl text-muted-foreground">%</span>
-                    </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="vin">Input Voltage (V)</Label>
+              <Input id="vin" type="number" value={vin}
+                onChange={e => setVin(Number(e.target.value))} step={0.1} />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="vout">Output Voltage (V)</Label>
+              <Input id="vout" type="number" value={vout}
+                onChange={e => setVout(Number(e.target.value))} step={0.1} />
+            </div>
+
+            {/* ...其他输入控件... */}
+
+            {error && <p className="text-sm text-red-500">{error}</p>}
+
+            <button
+              className="w-full bg-foreground text-background py-3 px-6 rounded-lg font-medium hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
+              onClick={calculate}
+            >
+              <Zap className="size-4" /> Calculate
+            </button>
+          </div>
+        </MagicCard>
+
+        {/* 右: 输出 */}
+        <MagicCard className="p-6" gradientColor="var(--color-muted)">
+          <div className="space-y-6">
+            <div className="flex items-center gap-2">
+              <Activity className="size-5" />
+              <h2 className="text-lg font-semibold">Results</h2>
+            </div>
+            {result ? (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label className="text-muted-foreground">Duty Cycle</Label>
+                  <div className="flex items-baseline gap-1">
+                    <NumberTicker value={result.duty} decimalPlaces={1}
+                      className="text-4xl font-bold tracking-tight"
+                      springConfig={fastSpring} />
+                    <span className="text-xl text-muted-foreground">%</span>
                   </div>
                 </div>
-              ) : (
-                <div className="flex h-[300px] items-center justify-center text-muted-foreground">
-                  <p>Click "Calculate" to see results</p>
-                </div>
-              )}
-            </div>
-          </MagicCard>
-        </div>
+              </div>
+            ) : (
+              <div className="flex h-[300px] items-center justify-center text-muted-foreground">
+                <p>Click "Calculate" to see results</p>
+              </div>
+            )}
+          </div>
+        </MagicCard>
       </div>
-    </div>
+    </CalculatorLayout>
   )
 }
 ```
 
-### Step 2: Register the route
+### Step 3: Register the route
 
 In `src/App.tsx`, add the new route:
 
@@ -189,51 +239,57 @@ export default function App() {
 }
 ```
 
-### Step 3: Add a card to the homepage
+### Step 4: Add a card to the homepage
 
 In `src/Home.tsx`, add an entry to the `features` array:
 
 ```tsx
 {
-  Icon: Zap,                          // lucide-react 图标
-  name: "Buck Converter",             // 卡片标题
+  Icon: Zap,
+  name: "Buck Converter",
   description: "Step-down converter duty cycle and ripple calculation.",
   href: "#",
-  cta: "Open tool",                   // 按钮文字
-  className: "col-span-3 lg:col-span-1",  // 占满(3) / 半宽(2) / 窄(1)
+  cta: "Open tool",
+  className: "col-span-3 lg:col-span-1",
   background: <div className="absolute -top-20 -right-20 opacity-60" />,
-  to: "/buck",                        // 路由路径
+  to: "/buck",
 }
 ```
 
 Grid columns: `col-span-3` = full width on mobile, `lg:col-span-2` = 2/3 on desktop, `lg:col-span-1` = 1/3.
 
-### Step 4: Install any new components you need
-
-```bash
-# Magic UI components
-npx shadcn@latest add @magicui/<component-name>
-
-# shadcn/ui components
-npx shadcn@latest add <component-name>
-```
-
-**⚠️ CRITICAL:** After every `npx shadcn@latest add`, the CLI creates files under a literal `@/` directory instead of `src/`. You MUST move them:
-
-```bash
-mv @/components/ui/<file>.tsx src/components/ui/
-rm -rf @
-```
-
-### Step 5: Build and deploy
-
-```bash
-npm run build        # TypeScript check + Vite build
-bash deploy.sh       # Push dist/ to gh-pages branch
-git add . && git commit -m "feat: add buck calculator" && git push origin master
-```
-
 ## Key Patterns
+
+### CalculatorLayout
+
+All calculator pages use `CalculatorLayout` for a consistent page shell (background grid, back button, header, theme toggle). Pass `title` and `description` as props; all page content goes in `children`.
+
+```tsx
+<CalculatorLayout
+  title="My Calculator"
+  description="Short description shown below the title."
+  descriptionMaxWidth="max-w-md"   // optional, default max-w-lg
+>
+  {/* your content */}
+</CalculatorLayout>
+```
+
+### Input Validation
+
+All calculation functions throw an `Error` with a human-readable message when inputs violate physical constraints. Wrap calls in `try/catch` and surface the message in the UI:
+
+```tsx
+const calculate = () => {
+  try {
+    setError(null)
+    setResult(calculateBuck({ vin, vout, iout, fsw, l }))
+  } catch (e) {
+    setError(e instanceof Error ? e.message : "Calculation error")
+  }
+}
+
+{error && <p className="text-sm text-red-500">{error}</p>}
+```
 
 ### Input Controls
 
@@ -248,7 +304,7 @@ git add . && git commit -m "feat: add buck calculator" && git push origin master
     <span className="text-sm text-muted-foreground">{l} µH</span>
   </div>
   <Slider min={1} max={100} step={1} value={[l]}
-    onValueChange={val => setL(val[0])} />
+    onValueChange={val => setL(Array.isArray(val) ? val[0] : val)} />
 </div>
 
 // Dropdown select
@@ -259,12 +315,6 @@ git add . && git commit -m "feat: add buck calculator" && git push origin master
     <SelectItem value="buck">Buck</SelectItem>
   </SelectContent>
 </Select>
-
-// Checkbox
-<div className="flex items-center gap-2">
-  <Checkbox id="ocp" checked={enableOcp} onCheckedChange={v => setEnableOcp(v === true)} />
-  <Label htmlFor="ocp" className="cursor-pointer">Over-Current Protection</Label>
-</div>
 ```
 
 ### Animated Results (NumberTicker)
@@ -274,7 +324,7 @@ git add . && git commit -m "feat: add buck calculator" && git push origin master
   value={results.duty}
   decimalPlaces={1}
   className="text-4xl font-bold tracking-tight"
-  springConfig={{ stiffness: 600, damping: 40 }}  // fast animation
+  springConfig={{ stiffness: 600, damping: 40 }}
 />
 ```
 
@@ -295,12 +345,12 @@ const chartConfig = {
     <CartesianGrid strokeDasharray="3 3" />
     <XAxis dataKey="t" tickFormatter={v => `${v}µs`} />
     <YAxis />
-    <ChartTooltip 
+    <ChartTooltip
       content={
-        <ChartTooltipContent 
-          labelFormatter={(_, payload) => `t = ${payload?.[0]?.payload?.t} µs`} 
+        <ChartTooltipContent
+          labelFormatter={(_, payload) => `t = ${payload?.[0]?.payload?.t} µs`}
         />
-      } 
+      }
     />
     <Line type="monotone" dataKey="il" stroke="var(--color-il)" strokeWidth={2} dot={false} />
   </LineChart>
@@ -341,29 +391,15 @@ useEffect(() => {
 
 ## Deployment
 
-This project deploys to **GitHub Pages** using a simple script (`deploy.sh`):
+This project deploys to **GitHub Pages** automatically via **GitHub Actions** on every push to `master`.
 
-1. `npm run build` → generates `dist/`
-2. `deploy.sh` → copies `dist/` to a temp git repo, force-pushes to `gh-pages` branch
+The workflow is defined in `.github/workflows/deploy.yml`:
 
-### deploy.sh
+1. Triggered on every push to `master` (or manually via `workflow_dispatch`)
+2. Runs `npm ci` → `npm run build` → uploads `dist/` as a Pages artifact
+3. Deploys the artifact to GitHub Pages
 
-```bash
-#!/bin/bash
-cd /path/to/your-project
-TOKEN=$(grep "github.com" ~/.git-credentials 2>/dev/null | head -1 | sed 's|https://[^:]*:\([^@]*\)@.*|\1|')
-
-rm -rf /tmp/gh-pages-deploy
-mkdir -p /tmp/gh-pages-deploy
-cp -r dist/* /tmp/gh-pages-deploy/
-
-cd /tmp/gh-pages-deploy
-git init
-git add .
-git commit -m "Deploy"
-git remote add origin https://YOUR_USER:${TOKEN}@github.com/YOUR_USER/YOUR_REPO.git
-git push -f origin master:gh-pages
-```
+No manual steps are required. Build and deploy status can be monitored in the **Actions** tab of the repository.
 
 > **Why HashRouter?** GitHub Pages doesn't support SPA server-side routing. With `BrowserRouter`, refreshing a subpage (e.g. `/boost`) returns 404. `HashRouter` uses `#/boost` which the static server ignores — all routes resolve to `index.html`.
 
@@ -387,15 +423,23 @@ The shadcn Select (via @base-ui) passes `null` on clear. Guard with:
 onValueChange={(v) => v && setMyValue(v)}
 ```
 
-### 3. GitHub Pages SPA 404
+### 3. Slider onValueChange type
+
+The `@base-ui/react` Slider `onValueChange` callback may pass either a number or an array depending on context. Always guard with:
+
+```tsx
+onValueChange={val => setL(Array.isArray(val) ? val[0] : val)}
+```
+
+### 4. GitHub Pages SPA 404
 
 Always use `HashRouter`, never `BrowserRouter`.
 
-### 4. Tailwind CSS v4
+### 5. Tailwind CSS v4
 
 This project uses Tailwind CSS v4 with `@tailwindcss/vite` plugin. The CSS entry point uses `@import "tailwindcss"` syntax, not the v3 `@tailwind` directives.
 
-### 5. Geist font via @fontsource
+### 6. Geist font via @fontsource
 
 The Geist font is loaded via `@fontsource-variable/geist` in `main.tsx`, not via CDN. If you get 404s on font files, check the import.
 
@@ -405,13 +449,13 @@ The Geist font is loaded via `@fontsource-variable/geist` in `main.tsx`, not via
 |-----------|---------|---------|
 | Vite | 8.x | Build tool |
 | React | 19.x | UI framework |
-| TypeScript | 6.x | Type safety |
+| TypeScript | 6.x | Type safety (strict mode enabled) |
 | Tailwind CSS | 4.x | Utility-first CSS |
 | shadcn/ui | 4.x | Base component library (CLI install) |
 | Magic UI | — | Animation components (CLI install via shadcn) |
 | Recharts | 3.x | Chart library (via shadcn chart component) |
 | Motion | 12.x | Animation library (used by Magic UI) |
-| Lucide React | — | Icon library |
+| Lucide React | 1.x | Icon library |
 | React Router | 7.x | Client-side routing (HashRouter) |
 
 ## License
