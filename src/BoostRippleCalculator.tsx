@@ -1,9 +1,7 @@
 import { useState, useMemo } from "react"
-import { Link } from "react-router-dom"
-import { Zap, Activity, Calculator, ArrowLeft, Waves } from "lucide-react"
-import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler"
-import { FlickeringGrid } from "@/components/ui/flickering-grid"
-import { AnimatedShinyText } from "@/components/ui/animated-shiny-text"
+import { Zap, Activity, Calculator, Waves } from "lucide-react"
+import { CalculatorLayout } from "@/components/layout/CalculatorLayout"
+import { calculateBoostRipple, type RippleResult } from "@/lib/calculators"
 import { NumberTicker } from "@/components/ui/number-ticker"
 import { MagicCard } from "@/components/ui/magic-card"
 import { Input } from "@/components/ui/input"
@@ -26,55 +24,6 @@ import {
 // 弹簧配置
 const fastSpring = { stiffness: 600, damping: 40 }
 
-// ─── 输入参数类型 ───
-interface RippleInputs {
-  vin: number      // V
-  vout: number     // V
-  iout: number     // A
-  fsw: number      // kHz
-  eta: number      // 效率 (0~1)
-  l: number        // µH
-  cout: number     // µF
-  esr: number      // mΩ
-  vd: number       // 二极管正向压降 V
-  alpha: number    // 相1电流比例 (0~1)
-}
-
-// ─── 标量结果 ───
-interface RippleScalars {
-  d: number           // 占空比 (%)
-  iinTotal: number    // 总输入电流 (A)
-  il1Avg: number      // 相1平均电感电流 (mA)
-  il2Avg: number      // 相2平均电感电流 (mA)
-  ilPeak: number      // 总峰值电流 (mA)
-  ph1Mode: string     // CCM / DCM
-  ph2Mode: string
-  ph1Ipeak: number    // mA
-  ph1Ivalley: number  // mA
-  ph2Ipeak: number
-  ph2Ivalley: number
-  vpp: number         // 总纹波峰峰值 (mV)
-  vcPp: number        // 电容纹波峰峰值 (mV)
-  vesrPp: number      // ESR纹波峰峰值 (mV)
-}
-
-// ─── 波形数据点 ───
-interface WaveformPoint {
-  t: number       // µs
-  id1: number     // A
-  id2: number     // A
-  idTotal: number // A
-  ic: number      // A
-  vc: number      // mV
-  vesr: number    // mV
-  vripple: number // mV
-}
-
-interface RippleResult {
-  scalars: RippleScalars
-  waveforms: WaveformPoint[]
-}
-
 // ─── Chart 配置 ───
 const currentChartConfig = {
   id1: { label: "Phase 1 Id (A)", color: "#3b82f6" },
@@ -91,208 +40,6 @@ const totalRippleChartConfig = {
   vripple: { label: "Total Ripple (mV)", color: "#a855f7" },
 } satisfies ChartConfig
 
-// ─── 核心计算函数 ───
-function calculateBoostRipple(inputs: RippleInputs): RippleResult {
-  const { vin, vout, iout, fsw, eta, l, cout, esr, vd, alpha } = inputs
-
-  // 单位转换
-  const fswHz = fsw * 1000
-  const L = l * 1e-6
-  const Cout = cout * 1e-6
-  const ESR = esr * 1e-3
-
-  // Step 1: 基本稳态量
-  const T = 1 / fswHz
-  const D = 1 - (vin * eta) / (vout + vd)
-  const IinTotal = (vout * iout) / (vin * eta)
-  const IL1Avg = IinTotal * alpha
-  const IL2Avg = IinTotal * (1 - alpha)
-  const deltaIL = (vin * D * T) / L
-
-  // Step 2: 单相工作模式判定与电流波形
-  const N = 2000
-  const dt = T / N
-
-  function calcPhaseWaveform(ILAvg: number): {
-    mode: string
-    iPeak: number
-    iValley: number
-    ton: number
-    id: Float64Array
-  } {
-    const isCCM = ILAvg > deltaIL / 2
-    let iPeak: number, iValley: number, ton: number
-    const id = new Float64Array(N)
-
-    if (isCCM) {
-      iPeak = ILAvg + deltaIL / 2
-      iValley = ILAvg - deltaIL / 2
-      const tonTime = D * T
-      ton = tonTime
-      for (let i = 0; i < N; i++) {
-        const t = i * dt
-        if (t < tonTime) {
-          id[i] = 0
-        } else {
-          // 线性下降
-          const frac = (t - tonTime) / (T - tonTime)
-          id[i] = iPeak - frac * (iPeak - iValley)
-        }
-      }
-    } else {
-      // DCM
-      const k = L * (1 / vin + 1 / (vout + vd - vin)) / T
-      iPeak = Math.sqrt(2 * ILAvg / k)
-      iValley = 0
-      ton = (iPeak * L) / vin
-      const toff2 = (iPeak * L) / (vout + vd - vin)
-      for (let i = 0; i < N; i++) {
-        const t = i * dt
-        if (t < ton) {
-          id[i] = 0
-        } else if (t < ton + toff2) {
-          id[i] = iPeak * (1 - (t - ton) / toff2)
-        } else {
-          id[i] = 0
-        }
-      }
-    }
-
-    return { mode: isCCM ? "CCM" : "DCM", iPeak, iValley, ton, id }
-  }
-
-  const ph1 = calcPhaseWaveform(IL1Avg)
-  const ph2 = calcPhaseWaveform(IL2Avg)
-
-  // Step 3: 两相交错叠加 (180° 相移 = N/2 个采样点)
-  const halfN = N / 2
-  const idTotal = new Float64Array(N)
-  for (let i = 0; i < N; i++) {
-    const idx2 = (i + halfN) % N
-    idTotal[i] = ph1.id[i] + ph2.id[idx2]
-  }
-
-  // Step 4: 电容纹波
-  const ic = new Float64Array(N)
-  for (let i = 0; i < N; i++) {
-    ic[i] = idTotal[i] - iout
-  }
-
-  // 电容电压纹波 (积分后减均值)
-  const vc = new Float64Array(N)
-  let vcSum = 0
-  let vcIntegral = 0
-  for (let i = 0; i < N; i++) {
-    vcIntegral += ic[i] * dt
-    vc[i] = vcIntegral / Cout
-    vcSum += vc[i]
-  }
-  const vcMean = vcSum / N
-  for (let i = 0; i < N; i++) {
-    vc[i] -= vcMean
-  }
-
-  // ESR 压降
-  const vesr = new Float64Array(N)
-  for (let i = 0; i < N; i++) {
-    vesr[i] = ic[i] * ESR
-  }
-
-  // 总纹波
-  const vripple = new Float64Array(N)
-  for (let i = 0; i < N; i++) {
-    vripple[i] = vc[i] + vesr[i]
-  }
-
-  // Step 5: 纹波峰峰值
-  let vcMin = Infinity, vcMax = -Infinity
-  let vesrMin = Infinity, vesrMax = -Infinity
-  let vrMin = Infinity, vrMax = -Infinity
-  for (let i = 0; i < N; i++) {
-    if (vc[i] < vcMin) vcMin = vc[i]
-    if (vc[i] > vcMax) vcMax = vc[i]
-    if (vesr[i] < vesrMin) vesrMin = vesr[i]
-    if (vesr[i] > vesrMax) vesrMax = vesr[i]
-    if (vripple[i] < vrMin) vrMin = vripple[i]
-    if (vripple[i] > vrMax) vrMax = vripple[i]
-  }
-
-  // 生成波形数据 (5 个周期, 平铺+重积分, 降采样步长 4)
-  const NCYCLES = 5
-  const DOWNSAMPLE = 4
-
-  // 平铺 Id1, Id2, Id_total, Vesr 到 5 个周期
-  const Nt = NCYCLES * N
-  const id1Tiled = new Float64Array(Nt)
-  const id2Tiled = new Float64Array(Nt)
-  const idTotalTiled = new Float64Array(Nt)
-  const vesrTiled = new Float64Array(Nt)
-  for (let c = 0; c < NCYCLES; c++) {
-    for (let i = 0; i < N; i++) {
-      const idx = c * N + i
-      const idx2 = (i + halfN) % N
-      id1Tiled[idx] = ph1.id[i]
-      id2Tiled[idx] = ph2.id[idx2]
-      idTotalTiled[idx] = idTotal[i]
-      vesrTiled[idx] = vesr[i]
-    }
-  }
-
-  // Ic 去直流后平铺，再重积分 Vc（参考代码做法）
-  let meanIc = 0
-  for (let i = 0; i < N; i++) meanIc += ic[i]
-  meanIc /= N
-
-  const vcTiled = new Float64Array(Nt)
-  let vcSumTiled = 0
-  for (let i = 0; i < Nt; i++) {
-    vcSumTiled += (ic[i % N] - meanIc) * dt
-    vcTiled[i] = vcSumTiled / Cout
-  }
-  let vcMeanTiled = 0
-  for (let i = 0; i < Nt; i++) vcMeanTiled += vcTiled[i]
-  vcMeanTiled /= Nt
-  for (let i = 0; i < Nt; i++) vcTiled[i] -= vcMeanTiled
-
-  const vrippleTiled = new Float64Array(Nt)
-  for (let i = 0; i < Nt; i++) vrippleTiled[i] = vcTiled[i] + vesrTiled[i]
-
-  // 降采样输出
-  const waveforms: WaveformPoint[] = []
-  for (let i = 0; i < Nt; i += DOWNSAMPLE) {
-    const tUs = (i / Nt) * T * NCYCLES * 1e6
-    waveforms.push({
-      t: parseFloat(tUs.toFixed(2)),
-      id1: parseFloat(id1Tiled[i].toFixed(3)),
-      id2: parseFloat(id2Tiled[i].toFixed(3)),
-      idTotal: parseFloat(idTotalTiled[i].toFixed(3)),
-      ic: parseFloat((ic[i % N] - meanIc).toFixed(3)),
-      vc: parseFloat((vcTiled[i] * 1000).toFixed(2)),
-      vesr: parseFloat((vesrTiled[i] * 1000).toFixed(2)),
-      vripple: parseFloat((vrippleTiled[i] * 1000).toFixed(2)),
-    })
-  }
-
-  return {
-    scalars: {
-      d: D * 100,
-      iinTotal: IinTotal,
-      il1Avg: IL1Avg * 1000,
-      il2Avg: IL2Avg * 1000,
-      ilPeak: Math.max(ph1.iPeak, ph2.iPeak) * 1000,
-      ph1Mode: ph1.mode,
-      ph2Mode: ph2.mode,
-      ph1Ipeak: ph1.iPeak * 1000,
-      ph1Ivalley: ph1.iValley * 1000,
-      ph2Ipeak: ph2.iPeak * 1000,
-      ph2Ivalley: ph2.iValley * 1000,
-      vpp: (vrMax - vrMin) * 1000,
-      vcPp: (vcMax - vcMin) * 1000,
-      vesrPp: (vesrMax - vesrMin) * 1000,
-    },
-    waveforms,
-  }
-}
 
 // ─── 主组件 ───
 export default function BoostRippleCalculator() {
@@ -310,8 +57,17 @@ export default function BoostRippleCalculator() {
 
   // 计算结果
   const [result, setResult] = useState<RippleResult | null>(null)
+  // 错误提示
+  const [calcError, setCalcError] = useState<string | null>(null)
 
   const calculate = () => {
+    setCalcError(null)
+    if (vin <= 0 || vout <= 0) { setCalcError("输入/输出电压必须大于 0 V"); return }
+    if (vout <= vin) { setCalcError("Boost 拓扑要求输出电压必须大于输入电压"); return }
+    if (iout <= 0) { setCalcError("输出电流必须大于 0 A"); return }
+    if (fsw <= 0 || l <= 0 || cout <= 0) { setCalcError("频率、电感量和电容量必须大于 0"); return }
+    if (eta <= 0 || eta > 1) { setCalcError("效率 η 必须在 (0, 1] 范围内"); return }
+    if (alpha <= 0 || alpha >= 1) { setCalcError("相1电流比例 α 必须在 (0, 1) 范围内"); return }
     const r = calculateBoostRipple({
       vin, vout, iout, fsw, eta, l, cout, esr, vd, alpha,
     })
@@ -325,44 +81,11 @@ export default function BoostRippleCalculator() {
   }, [result])
 
   return (
-    <div className="relative min-h-screen bg-background">
-      {/* 背景动画网格 */}
-      <div className="fixed inset-0 z-0">
-        <FlickeringGrid
-          color="var(--foreground)"
-          maxOpacity={0.03}
-          flickerChance={0.04}
-          squareSize={3}
-          gridGap={6}
-        />
-      </div>
-
-      <div className="relative z-10 mx-auto max-w-5xl px-6 py-16">
-        {/* 返回链接 */}
-        <div className="mb-6">
-          <Link to="/" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors">
-            <ArrowLeft className="size-4" />
-            Back
-          </Link>
-        </div>
-
-        {/* 头部 */}
-        <div className="relative mb-12 text-center">
-          <div className="absolute top-0 right-0">
-            <AnimatedThemeToggler />
-          </div>
-          <AnimatedShinyText className="mb-3 text-xs tracking-widest uppercase">
-            Power Electronics Calculator
-          </AnimatedShinyText>
-          <h1 className="mt-1 text-3xl font-semibold text-foreground">
-            Boost Output Ripple
-          </h1>
-          <p className="mt-2 text-sm text-muted-foreground max-w-lg mx-auto">
-            Two-phase interleaved async Boost output ripple time-domain simulation.
-            Auto CCM/DCM detection, 180° phase shift.
-          </p>
-        </div>
-
+    <CalculatorLayout
+      title="Boost Output Ripple"
+      description="Two-phase interleaved async Boost output ripple time-domain simulation. Auto CCM/DCM detection, 180° phase shift."
+      descriptionMaxWidth="max-w-lg"
+    >
         {/* 主内容区 - 两栏布局 */}
         <div className="grid gap-6 md:grid-cols-2">
           {/* 左侧：输入区域 */}
@@ -432,6 +155,11 @@ export default function BoostRippleCalculator() {
                 <Label htmlFor="alpha">Phase 1 Current Ratio (α)</Label>
                 <Input id="alpha" type="number" value={alpha} onChange={e => setAlpha(Number(e.target.value))} step={0.05} min={0.1} max={0.9} />
               </div>
+
+              {/* 错误提示 */}
+              {calcError && (
+                <p className="text-sm text-red-500 dark:text-red-400">{calcError}</p>
+              )}
 
               {/* 计算按钮 */}
               <button
@@ -617,17 +345,6 @@ export default function BoostRippleCalculator() {
           </div>
         )}
 
-        {/* 页脚 */}
-        <div className="mt-16 text-center text-xs text-muted-foreground">
-          Built with{" "}
-          <a
-            href="https://magicui.design"
-            className="underline underline-offset-4 hover:text-foreground transition-colors"
-          >
-            Magic UI
-          </a>
-        </div>
-      </div>
-    </div>
+    </CalculatorLayout>
   )
 }
