@@ -418,7 +418,7 @@ export default function BoostCalculator() {
                     tick={{ fontSize: 11 }}
                     label={{ value: "mA", angle: -90, position: "insideLeft", style: { fontSize: 11 } }}
                   />
-                  <ChartTooltip content={<ChartTooltipContent />} />
+                  <ChartTooltip content={<ChartTooltipContent labelFormatter={(_, payload) => `t = ${payload?.[0]?.payload?.t} µs`} />} />
                   <Line
                     type="monotone"
                     dataKey="il"
@@ -446,7 +446,7 @@ export default function BoostCalculator() {
                       tickFormatter={(v) => `${v}µs`}
                     />
                     <YAxis tick={{ fontSize: 10 }} />
-                    <ChartTooltip content={<ChartTooltipContent />} />
+                    <ChartTooltip content={<ChartTooltipContent labelFormatter={(_, payload) => `t = ${payload?.[0]?.payload?.t} µs`} />} />
                     <Line
                       type="stepAfter"
                       dataKey="vsw"
@@ -472,7 +472,7 @@ export default function BoostCalculator() {
                       tickFormatter={(v) => `${v}µs`}
                     />
                     <YAxis tick={{ fontSize: 10 }} domain={["dataMin - 0.1", "dataMax + 0.1"]} />
-                    <ChartTooltip content={<ChartTooltipContent />} />
+                    <ChartTooltip content={<ChartTooltipContent labelFormatter={(_, payload) => `t = ${payload?.[0]?.payload?.t} µs`} />} />
                     <Line
                       type="monotone"
                       dataKey="vout"

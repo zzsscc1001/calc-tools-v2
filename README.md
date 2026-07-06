@@ -295,7 +295,13 @@ const chartConfig = {
     <CartesianGrid strokeDasharray="3 3" />
     <XAxis dataKey="t" tickFormatter={v => `${v}µs`} />
     <YAxis />
-    <ChartTooltip content={<ChartTooltipContent />} />
+    <ChartTooltip 
+      content={
+        <ChartTooltipContent 
+          labelFormatter={(_, payload) => `t = ${payload?.[0]?.payload?.t} µs`} 
+        />
+      } 
+    />
     <Line type="monotone" dataKey="il" stroke="var(--color-il)" strokeWidth={2} dot={false} />
   </LineChart>
 </ChartContainer>
@@ -330,6 +336,8 @@ useEffect(() => {
 | Component | File | Modification | Reason |
 |-----------|------|-------------|--------|
 | NumberTicker | `src/components/ui/number-ticker.tsx` | Added `springConfig` prop (optional `SpringOptions`) | Default animation too slow |
+
+> **Note on Chart components:** The shadcn `ChartTooltipContent` (`src/components/ui/chart.tsx`) was **not** modified. To display custom X-axis information (like time or frequency) in the tooltip header, we simply pass the `labelFormatter` prop to it directly from the page level, leveraging the existing Recharts API passthrough.
 
 ## Deployment
 

@@ -600,7 +600,7 @@ export default function LedLoopCalculator() {
                     tick={{ fontSize: 10 }}
                     label={{ value: "Gain (dB)", angle: -90, position: "insideLeft", style: { fontSize: 10 } }}
                   />
-                  <ChartTooltip content={<ChartTooltipContent />} />
+                  <ChartTooltip content={<ChartTooltipContent labelFormatter={(_, payload) => { const f = payload?.[0]?.payload?.f; return f ? `f = ${formatFreq(f)}` : ''; }} />} />
                   <ReferenceLine y={0} stroke="var(--color-border)" strokeDasharray="6 4" strokeWidth={1} />
                   <Line
                     type="monotone"
@@ -643,7 +643,7 @@ export default function LedLoopCalculator() {
                     domain={[-270, 90]}
                     label={{ value: "Phase (°)", angle: -90, position: "insideLeft", style: { fontSize: 10 } }}
                   />
-                  <ChartTooltip content={<ChartTooltipContent />} />
+                  <ChartTooltip content={<ChartTooltipContent labelFormatter={(_, payload) => { const f = payload?.[0]?.payload?.f; return f ? `f = ${formatFreq(f)}` : ''; }} />} />
                   <ReferenceLine y={-180} stroke="var(--color-border)" strokeDasharray="6 4" strokeWidth={1} />
                   <Line
                     type="monotone"
