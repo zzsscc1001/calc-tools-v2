@@ -47,7 +47,7 @@ const features = [
     name: "Thermal Analysis",
     description: "Junction temperature and derating calculations.",
     cta: "Coming soon",
-    className: "col-span-3 lg:col-span-1",
+    className: "col-span-3 lg:col-span-2",
     background: <div className="absolute -top-20 -right-20 opacity-60" />,
   },
   {
@@ -55,7 +55,7 @@ const features = [
     name: "MOSFET Losses",
     description: "Switching and conduction loss estimation.",
     cta: "Coming soon",
-    className: "col-span-3 lg:col-span-2",
+    className: "col-span-3 lg:col-span-3",
     background: <div className="absolute -top-20 -right-20 opacity-60" />,
   },
   {
