@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react"
-import { Link } from "react-router-dom"
 import {
   Zap,
   Activity,
@@ -20,7 +19,6 @@ const features = [
     Icon: Zap,
     name: "Calculator Demo",
     description: "Basic Boost converter duty cycle and ripple demo.",
-    href: "#",
     cta: "Open demo",
     className: "col-span-3 lg:col-span-1",
     background: <div className="absolute -top-20 -right-20 opacity-60" />,
@@ -30,7 +28,6 @@ const features = [
     Icon: BarChart3,
     name: "Boost Ripple",
     description: "Two-phase interleaved async Boost output ripple simulation.",
-    href: "#",
     cta: "Open tool",
     className: "col-span-3 lg:col-span-2",
     background: <div className="absolute -top-20 -right-20 opacity-60" />,
@@ -40,7 +37,6 @@ const features = [
     Icon: Activity,
     name: "Loop Compensation",
     description: "Bode plot analysis and compensation network design.",
-    href: "#",
     cta: "Open tool",
     className: "col-span-3 lg:col-span-1",
     background: <div className="absolute -top-20 -right-20 opacity-60" />,
@@ -50,41 +46,33 @@ const features = [
     Icon: Thermometer,
     name: "Thermal Analysis",
     description: "Junction temperature and derating calculations.",
-    href: "#",
     cta: "Coming soon",
     className: "col-span-3 lg:col-span-1",
     background: <div className="absolute -top-20 -right-20 opacity-60" />,
-    to: "#",
   },
   {
     Icon: Cpu,
     name: "MOSFET Losses",
     description: "Switching and conduction loss estimation.",
-    href: "#",
     cta: "Coming soon",
     className: "col-span-3 lg:col-span-2",
     background: <div className="absolute -top-20 -right-20 opacity-60" />,
-    to: "#",
   },
   {
     Icon: Waves,
     name: "LC Filter Design",
     description: "Inductor and capacitor sizing for output filtering.",
-    href: "#",
     cta: "Coming soon",
     className: "col-span-3 lg:col-span-2",
     background: <div className="absolute -top-20 -right-20 opacity-60" />,
-    to: "#",
   },
   {
     Icon: Calculator,
     name: "Voltage Divider",
     description: "Resistor ratio and loading effect calculator.",
-    href: "#",
     cta: "Coming soon",
     className: "col-span-3 lg:col-span-1",
     background: <div className="absolute -top-20 -right-20 opacity-60" />,
-    to: "#",
   },
 ]
 
@@ -140,10 +128,8 @@ export default function Home() {
 
         {/* Bento Grid 目录 */}
         <BentoGrid className="auto-rows-[12rem]">
-          {features.map((feature, idx) => (
-            <Link key={idx} to={feature.to} className="contents">
-              <BentoCard {...feature} />
-            </Link>
+          {features.map((feature) => (
+            <BentoCard key={feature.name} {...feature} />
           ))}
         </BentoGrid>
 

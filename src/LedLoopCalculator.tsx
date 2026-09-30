@@ -3,6 +3,8 @@ import { Zap, Activity, Calculator, Waves } from "lucide-react"
 import katex from "katex"
 import "katex/dist/katex.min.css"
 import { CalculatorLayout } from "@/components/layout/CalculatorLayout"
+import { ResultsPlaceholder } from "@/components/results-placeholder"
+import { fastSpring } from "@/lib/fast-spring"
 import { calculateLedLoop, type LoopResult } from "@/lib/calculators"
 import { NumberTicker } from "@/components/ui/number-ticker"
 import { MagicCard } from "@/components/ui/magic-card"
@@ -23,9 +25,6 @@ import {
   CartesianGrid,
   ReferenceLine,
 } from "recharts"
-
-// 弹簧配置
-const fastSpring = { stiffness: 600, damping: 40 }
 
 // ─── Chart 配置 ───
 const gainChartConfig = {
@@ -81,13 +80,13 @@ export default function LedLoopCalculator() {
 
   const calculate = () => {
     setCalcError(null)
-    if (vin <= 0 || vo <= 0) { setCalcError("输入/输出电压必须大于 0 V"); return }
-    if (vo <= vin) { setCalcError("Boost 拓扑要求输出电压必须大于输入电压"); return }
-    if (io <= 0) { setCalcError("输出电流必须大于 0 A"); return }
-    if (nLed <= 0) { setCalcError("LED 数量必须大于 0"); return }
-    if (l <= 0 || co <= 0) { setCalcError("电感量和电容量必须大于 0"); return }
-    if (fsw <= 0 || td <= 0) { setCalcError("开关频率和传输延迟必须大于 0"); return }
-    if (ri <= 0 || gm <= 0 || cc <= 0) { setCalcError("Ri、gm、Cc 必须大于 0"); return }
+    if (vin <= 0 || vo <= 0) { setCalcError("Input and output voltage must be greater than 0 V"); return }
+    if (vo <= vin) { setCalcError("Boost topology requires output voltage greater than input voltage"); return }
+    if (io <= 0) { setCalcError("Output current must be greater than 0 A"); return }
+    if (nLed <= 0) { setCalcError("LED count must be greater than 0"); return }
+    if (l <= 0 || co <= 0) { setCalcError("Inductance and capacitance must be greater than 0"); return }
+    if (fsw <= 0 || td <= 0) { setCalcError("Switching frequency and propagation delay must be greater than 0"); return }
+    if (ri <= 0 || gm <= 0 || cc <= 0) { setCalcError("Ri, gm, and Cc must be greater than 0"); return }
     const r = calculateLedLoop({
       vin, vo, io, nLed, l, co, esr, rPer, rs, cs, ri, gm, rc, cc, fsw, td,
     })
@@ -366,9 +365,7 @@ export default function LedLoopCalculator() {
                   </div>
                 </div>
               ) : (
-                <div className="flex h-[400px] items-center justify-center text-muted-foreground">
-                  <p>Click "Analyze" to see results</p>
-                </div>
+                <ResultsPlaceholder action="Analyze" />
               )}
             </div>
           </MagicCard>

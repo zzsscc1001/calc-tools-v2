@@ -9,7 +9,7 @@ A collection of power electronics calculation utilities built with **Vite + Reac
 - **BentoGrid homepage** — card-based tool directory using Magic UI components
 - **Animated title** — DiaTextReveal gradient sweep, replays on theme toggle
 - **Dark/Light theme** — AnimatedThemeToggler with smooth transitions
-- **Rich form inputs** — Slider, Input, Select, Checkbox (all from shadcn/ui)
+- **Rich form inputs** — Slider and Input (shadcn/ui)
 - **Animated results** — NumberTicker for smooth number transitions
 - **Waveform charts** — Recharts via shadcn/ui Chart for real circuit waveforms
 - **GitHub Pages deploy** — GitHub Actions CI/CD + HashRouter for SPA routing
@@ -43,6 +43,7 @@ src/
 │   ├── utils.ts                     # cn() helper (clsx + tailwind-merge)
 │   └── calculators/                 # 计算核心（纯函数，无 React 依赖）
 │       ├── index.ts                 # 统一导出入口
+│       ├── boost.ts                 # Boost 基础参数计算逻辑
 │       ├── boost-ripple.ts          # Boost 纹波计算逻辑
 │       └── led-loop.ts              # LED 环路补偿计算逻辑
 └── components/
@@ -57,13 +58,10 @@ src/
         ├── animated-theme-toggler.tsx
         ├── magic-card.tsx
         ├── chart.tsx                # shadcn: Recharts 封装
-        ├── checkbox.tsx
         ├── input.tsx
         ├── label.tsx
-        ├── select.tsx
         ├── separator.tsx
-        ├── slider.tsx
-        └── button.tsx
+        └── slider.tsx
 ```
 
 ## How to Add a New Calculator Page
@@ -248,7 +246,6 @@ In `src/Home.tsx`, add an entry to the `features` array:
   Icon: Zap,
   name: "Buck Converter",
   description: "Step-down converter duty cycle and ripple calculation.",
-  href: "#",
   cta: "Open tool",
   className: "col-span-3 lg:col-span-1",
   background: <div className="absolute -top-20 -right-20 opacity-60" />,
@@ -268,7 +265,7 @@ All calculator pages use `CalculatorLayout` for a consistent page shell (backgro
 <CalculatorLayout
   title="My Calculator"
   description="Short description shown below the title."
-  descriptionMaxWidth="max-w-md"   // optional, default max-w-lg
+  descriptionMaxWidth="max-w-lg"   // optional, default max-w-md
 >
   {/* your content */}
 </CalculatorLayout>
@@ -441,7 +438,7 @@ This project uses Tailwind CSS v4 with `@tailwindcss/vite` plugin. The CSS entry
 
 ### 6. Geist font via @fontsource
 
-The Geist font is loaded via `@fontsource-variable/geist` in `main.tsx`, not via CDN. If you get 404s on font files, check the import.
+The Geist font is loaded via `@fontsource-variable/geist` in `src/index.css`, not via CDN. If you get 404s on font files, check the import.
 
 ## Tech Stack Reference
 

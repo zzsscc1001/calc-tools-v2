@@ -1,6 +1,8 @@
 import { useState, useMemo } from "react"
 import { Zap, Activity, Calculator, Waves } from "lucide-react"
 import { CalculatorLayout } from "@/components/layout/CalculatorLayout"
+import { ResultsPlaceholder } from "@/components/results-placeholder"
+import { fastSpring } from "@/lib/fast-spring"
 import { calculateBoostRipple, type RippleResult } from "@/lib/calculators"
 import { NumberTicker } from "@/components/ui/number-ticker"
 import { MagicCard } from "@/components/ui/magic-card"
@@ -20,9 +22,6 @@ import {
   YAxis,
   CartesianGrid,
 } from "recharts"
-
-// 弹簧配置
-const fastSpring = { stiffness: 600, damping: 40 }
 
 // ─── Chart 配置 ───
 const currentChartConfig = {
@@ -62,12 +61,12 @@ export default function BoostRippleCalculator() {
 
   const calculate = () => {
     setCalcError(null)
-    if (vin <= 0 || vout <= 0) { setCalcError("输入/输出电压必须大于 0 V"); return }
-    if (vout <= vin) { setCalcError("Boost 拓扑要求输出电压必须大于输入电压"); return }
-    if (iout <= 0) { setCalcError("输出电流必须大于 0 A"); return }
-    if (fsw <= 0 || l <= 0 || cout <= 0) { setCalcError("频率、电感量和电容量必须大于 0"); return }
-    if (eta <= 0 || eta > 1) { setCalcError("效率 η 必须在 (0, 1] 范围内"); return }
-    if (alpha <= 0 || alpha >= 1) { setCalcError("相1电流比例 α 必须在 (0, 1) 范围内"); return }
+    if (vin <= 0 || vout <= 0) { setCalcError("Input and output voltage must be greater than 0 V"); return }
+    if (vout <= vin) { setCalcError("Boost topology requires output voltage greater than input voltage"); return }
+    if (iout <= 0) { setCalcError("Output current must be greater than 0 A"); return }
+    if (fsw <= 0 || l <= 0 || cout <= 0) { setCalcError("Frequency, inductance, and capacitance must be greater than 0"); return }
+    if (eta <= 0 || eta > 1) { setCalcError("Efficiency η must be in the range (0, 1]"); return }
+    if (alpha <= 0 || alpha >= 1) { setCalcError("Phase 1 current ratio α must be in the range (0, 1)"); return }
     const r = calculateBoostRipple({
       vin, vout, iout, fsw, eta, l, cout, esr, vd, alpha,
     })
@@ -277,9 +276,7 @@ export default function BoostRippleCalculator() {
                   </div>
                 </div>
               ) : (
-                <div className="flex h-[400px] items-center justify-center text-muted-foreground">
-                  <p>Click "Calculate" to see results</p>
-                </div>
+                <ResultsPlaceholder action="Calculate" />
               )}
             </div>
           </MagicCard>

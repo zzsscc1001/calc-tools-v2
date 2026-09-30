@@ -113,17 +113,16 @@ Vesr_pp = max(Vesr) - min(Vesr)        // ESR 纹波峰峰值
 
 | 输出 | 说明 | 单位 |
 |------|------|------|
-| D | 占空比 | - |
+| D | 占空比（返回值已乘 100） | % |
 | Iin_total | 总输入电流 | A |
-| IL1_avg | 相1平均电感电流 | A |
-| IL2_avg | 相2平均电感电流 | A |
-| Vpp | 总输出纹波峰峰值 | V |
-| Vc_pp | 电容纹波峰峰值 | V |
-| Vesr_pp | ESR纹波峰峰值 | V |
+| IL1_avg | 相1平均电感电流 | mA |
+| IL2_avg | 相2平均电感电流 | mA |
+| Vpp | 总输出纹波峰峰值 | mV |
+| Vc_pp | 电容纹波峰峰值 | mV |
+| Vesr_pp | ESR纹波峰峰值 | mV |
 | ph1.mode / ph2.mode | 各相工作模式 (CCM/DCM) | - |
-| ph1.Ipeak / ph2.Ipeak | 各相峰值电流 | A |
-| ph1.Ivalley / ph2.Ivalley | 各相谷值电流 | A |
-| ph1.Ton / ph2.Ton | 各相导通时间 | s |
+| ph1.Ipeak / ph2.Ipeak | 各相峰值电流 | mA |
+| ph1.Ivalley / ph2.Ivalley | 各相谷值电流 | mA |
 
 ### 波形数据（用于绘图）
 
@@ -154,9 +153,9 @@ Vripple_tiled[] = Vc_tiled[] + Vesr_tiled[]
 | Id2[] | 相2 二极管电流 (A) |
 | Id_total[] | 总二极管电流 (A) |
 | Ic[] | 电容电流 (A) |
-| Vc[] | 电容电压纹波 (V) |
-| Vesr[] | ESR 压降 (V) |
-| Vripple[] | 总输出纹波 (V) |
+| Vc[] | 电容电压纹波 (mV) |
+| Vesr[] | ESR 压降 (mV) |
+| Vripple[] | 总输出纹波 (mV) |
 
 ### 图表展示建议
 

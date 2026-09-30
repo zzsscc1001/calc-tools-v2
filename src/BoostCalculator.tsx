@@ -1,6 +1,9 @@
 import { useState, useMemo } from "react"
 import { Zap, Activity, Calculator, Waves } from "lucide-react"
 import { CalculatorLayout } from "@/components/layout/CalculatorLayout"
+import { ResultsPlaceholder } from "@/components/results-placeholder"
+import { fastSpring } from "@/lib/fast-spring"
+import { calculateBoost, generateBoostWaveforms } from "@/lib/calculators"
 import { NumberTicker } from "@/components/ui/number-ticker"
 import { MagicCard } from "@/components/ui/magic-card"
 import { Input } from "@/components/ui/input"
@@ -20,50 +23,6 @@ import {
   YAxis,
   CartesianGrid,
 } from "recharts"
-
-// 弹簧配置
-const fastSpring = { stiffness: 600, damping: 40 }
-
-// 生成 Boost 波形数据
-function generateWaveforms(vin: number, vout: number, f: number, l: number, iout: number, duty: number) {
-  const D = duty / 100
-  const Ts = 1 / (f * 1000) // 开关周期 (s)
-  const deltaIL = (vin * D) / (f * 1000 * l * 1e-6)
-  const ilAvg = iout / (1 - D)
-  const ilMin = ilAvg - deltaIL / 2
-  const ilPeak = ilAvg + deltaIL / 2
-
-  const points = 200
-  const data = []
-
-  for (let i = 0; i < points; i++) {
-    const t = (i / points) * Ts * 1e6 // µs
-    const tNorm = t / (Ts * 1e6) // 0~1
-
-    // 电感电流：三角纹波
-    let il: number
-    if (tNorm < D) {
-      il = ilMin + (deltaIL / D) * tNorm
-    } else {
-      il = ilPeak - (deltaIL / (1 - D)) * (tNorm - D)
-    }
-
-    // SW 节点电压：方波
-    const vsw = tNorm < D ? 0 : vout
-
-    // 输出电压纹波：简化正弦近似
-    const vripple = 0.02 * vout * Math.sin(2 * Math.PI * tNorm * 2)
-
-    data.push({
-      t: parseFloat(t.toFixed(2)),
-      il: parseFloat((il * 1000).toFixed(1)),
-      vsw: parseFloat(vsw.toFixed(1)),
-      vout: parseFloat((vout + vripple).toFixed(2)),
-    })
-  }
-
-  return data
-}
 
 const chartConfig = {
   il: { label: "Inductor Current (mA)", color: "#3b82f6" },
@@ -93,39 +52,29 @@ export default function BoostCalculator() {
   const calculate = () => {
     setCalcError(null)
     if (vin <= 0 || vout <= 0) {
-      setCalcError("输入/输出电压必须大于 0 V")
+      setCalcError("Input and output voltage must be greater than 0 V")
       return
     }
     if (vout <= vin) {
-      setCalcError("Boost 拓扑要求输出电压必须大于输入电压")
+      setCalcError("Boost topology requires output voltage greater than input voltage")
       return
     }
     if (iout <= 0) {
-      setCalcError("输出电流必须大于 0 A")
+      setCalcError("Output current must be greater than 0 A")
       return
     }
     if (l <= 0 || f <= 0) {
-      setCalcError("电感量和开关频率必须大于 0")
+      setCalcError("Inductance and switching frequency must be greater than 0")
       return
     }
 
-    const D = 1 - vin / vout
-    const deltaIL = (vin * D) / (f * 1000 * l * 1e-6)
-    const ilAvg = iout / (1 - D)
-    const ilPeak = ilAvg + deltaIL / 2
-
-    setResults({
-      duty: D * 100,
-      deltaIL: deltaIL * 1000,
-      ilAvg: ilAvg * 1000,
-      ilPeak: ilPeak * 1000,
-    })
+    setResults(calculateBoost({ vin, vout, f, l, iout }))
   }
 
   // 波形数据
   const waveformData = useMemo(() => {
     if (!results) return []
-    return generateWaveforms(vin, vout, f, l, iout, results.duty)
+    return generateBoostWaveforms(vin, vout, f, l, iout, results.duty)
   }, [results, vin, vout, f, l, iout])
 
   return (
@@ -307,9 +256,7 @@ export default function BoostCalculator() {
                 </div>
               </div>
             ) : (
-              <div className="flex h-[400px] items-center justify-center text-muted-foreground">
-                <p>Click "Calculate" to see results</p>
-              </div>
+              <ResultsPlaceholder action="Calculate" />
             )}
           </div>
         </MagicCard>
